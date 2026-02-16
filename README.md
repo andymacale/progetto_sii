@@ -1,4 +1,4 @@
-# 🫁 AI-Driven Chest X-Ray Quality Control & Diagnosis
+# Tecniche di Machine Learning e Computer Vision per l'analisi ed il suggerimento di follow-up clinici
 
 Questo progetto di ricerca propone una pipeline avanzata di Deep Learning per l'automazione del processo diagnostico su radiografie del torace, affrontando il problema della qualità del dato e della precisione della localizzazione tumorale.
 

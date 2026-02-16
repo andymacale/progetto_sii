@@ -214,6 +214,8 @@ models_saved/
 *.zip
 *.csv
 *.dcm
+*.jpg
+*.jpeg
 
 # --- File pesanti o temporanei ---
 *.pkl
