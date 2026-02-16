@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# --- DATI TESI (NON CARICARE MAI) ---
+data/
+data/*
+models_saved/
+*.tar.gz
+*.zip
+*.csv
+*.dcm
+
+# --- File pesanti o temporanei ---
+*.pkl
+*.pth
+*.h5
+__pycache__/
+venv/
+.env
