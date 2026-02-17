@@ -7,3 +7,4 @@ Ogni volta che apri il terminale, attiva l'ambiente:
 ```bash
 source venv/bin/activate
 pip install -r requirements.txt
+streamlit run web_app/app.py
