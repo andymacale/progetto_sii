@@ -9,12 +9,13 @@ Il sistema non si limita alla diagnosi, ma agisce come un assistente intelligent
 2. **Segmentazione ROI (U-Net):** Isolamento dell'area polmonare per eliminare il rumore anatomico (clavicole, costole, tessuti molli esterni) e focalizzare l'analisi solo sui tessuti d'interesse.
 3. **Diagnosi Tumorale (U-Net + NLP):** Identificazione di masse tumorali e validazione dei risultati tramite calcolo della Jaccard Similarity tra le mappe di attivazione dell'AI e i referti medici estratti dal dataset MIMIC-IV.
 
-## 🛠️ Stack Tecnologico
-- **Linguaggio:** Python 3.x
-- **Deep Learning:** PyTorch / U-Net
+## 🛠️ Stack
+- **Linguaggio:** Python 3.12.3
+- **Machine Learning:** PyTorch / U-Net
 - **Computer Vision:** OpenCV (Pre-processing & Filtering)
 - **Frontend:** Streamlit (Interfaccia Medico-Paziente)
 - **Dataset:** MIMIC-CXR, Montgomery County, Shenzhen Hospital
+- **DBMS:** PostgreSQL
 
 ## 📂 Struttura del Repository
 - `web_app/`: Codice dell'interfaccia utente Streamlit.
