@@ -11,7 +11,7 @@ Il sistema non si limita alla diagnosi, ma agisce come un assistente intelligent
 
 ## Stack
 - **Linguaggio:** Python 3.12.3
-- **DSS:** Boosting RandomForest-AdaBoost
+- **Decision Support System:** Boosting RandomForest-AdaBoost
 - **Machine Learning:** PyTorch / U-Net
 - **Computer Vision:** OpenCV (Pre-processing & Filtering)
 - **Informatica Teorica:** Uso delle espressioni regolari per la validazione
