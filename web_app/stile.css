@@ -1,0 +1,56 @@
+.stApp {
+    background-color: #ffffff;
+    color: #2c3e50;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+}
+
+button[kind="primary"] {
+    background-color: #0056b3 ;
+    color: white ;
+    border-radius: 8px ;
+    border: none ;
+    padding: 0.5rem 1rem ;
+    font-weight: 600 ;
+    transition: all 0.2s ease-in-out ;
+}
+
+button[kind="primary"]:hover {
+    background-color: #004494 ;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) ;
+    transform: translateY(-1px) ;
+}
+
+button[kind="secondary"] {
+    border-radius: 8px ;
+    transition: all 0.2s ;
+}
+
+button[kind="secondary"]:hover {
+    color: #dc3545 ;
+    border-color: #dc3545 ;
+}
+
+input {
+    border-radius: 8px ;
+    border: 1px solid #dee2e6 ;
+}
+
+input:focus {
+    border-color: #0056b3 ;
+    box-shadow: 0 0 0 0.2rem rgba(0,86,179,0.25) ;
+}
+
+h1, h2, h3 {
+    color: #1a2a3a;
+    font-weight: 700 ;
+}
+
+div[data-testid="stNotification"] {
+    border-radius: 10px ;
+    border: none ;
+}

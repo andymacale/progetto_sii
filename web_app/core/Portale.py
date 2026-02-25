@@ -68,7 +68,7 @@ class Portale:
         email = st.text_input("Email", key="reg_email", on_change=forza_maiuscolo)
         password = st.text_input("Password", type="password", key="reg_pass")
         conferma_password = st.text_input("Conferma Password", type="password", key="reg_pass_conf")
-        if st.button("Registrati", use_container_width=True):
+        if st.button("Registrati", type="primary", use_container_width=True):
             if not nome or not cognome or not codice_fiscale or not data_di_nascita or not email or not password:
                 st.error("Tutti i campi sono obbligatori!")
                 return
