@@ -217,6 +217,7 @@ models_saved/
 *.jpg
 *.jpeg
 
+
 # --- File pesanti o temporanei ---
 *.pkl
 *.pth
