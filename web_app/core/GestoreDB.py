@@ -1,11 +1,13 @@
 import psycopg2
 import os
+import bcrypt
 from psycopg2.extras import RealDictCursor
 from dominio.Medico import Medico
 from dominio.Credenziali import Credenziali
 from datetime import date
 from dotenv import load_dotenv, find_dotenv
 
+CHIAVE = 'utf-8'
 
 class GestoreDB:
     
@@ -13,7 +15,6 @@ class GestoreDB:
         """Parametri per collegarti al DBMS"""
         path = find_dotenv()
         load_dotenv(path)
-        print(f"Path: {path}")
         
         self.parametri = {
             "host": os.getenv("DB_HOST", "localhost"),
@@ -40,9 +41,13 @@ class GestoreDB:
                 values (%s, %s, %s, %s, (select id from nuovo))
                 """
 
+        password_bytes = medico.credenziali.password.encode(CHIAVE)
+        sale = bcrypt.gensalt() # Genera un "salt" casuale per sicurezza extra
+        password = bcrypt.hashpw(password_bytes, sale).decode(CHIAVE)
+        
         valori = (
             medico.credenziali.email,
-            medico.credenziali.password,
+            password,
             medico.nome,
             medico.cognome,
             medico.codice_fiscale,
@@ -71,8 +76,41 @@ class GestoreDB:
             return False
         finally:
             # Chiudi la connessione se e' stata aperta
-            if connessione:
+            if cursore:
                 cursore.close()
+            if connessione:
+                connessione.close()
+
+    def verifica_login(self, email: str, password_inserita: str):
+        """Verifica del login"""
+        connessione = None
+        cursore = None
+
+        query = """
+            select m.nome, m.cognome, c.password
+            from medici m
+            join credenziali c on c.id = m.credenziali_id
+            where email = %s;
+            """
+
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor(cursor_factory=RealDictCursor)
+            cursore.execute(query, (email,))
+            record = cursore.fetchone()
+            if record:
+                password_criptata = record['password'].encode(CHIAVE)
+                if bcrypt.checkpw(password_inserita.encode(CHIAVE), password_criptata):
+                    return {"nome": record['nome'], "cognome": record['cognome'], "email": email}
+            return None
+        except Exception as e:
+            print(f"Errore durante il login: {e}")
+            return None
+        finally:
+            # Chiudi la connessione se e' stata aperta
+            if cursore:
+                cursore.close()
+            if connessione:
                 connessione.close()
 
 
