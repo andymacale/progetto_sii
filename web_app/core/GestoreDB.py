@@ -29,7 +29,7 @@ class GestoreDB:
         """Apertura della connessione, solo quando devo interrogare il DB"""
         return psycopg2.connect(**self.parametri)
     
-    def inserisci_medico(self, credenziali: Credenziali, medico: Medico):
+    def inserisci_medico(self, medico: Medico):
         """Inserimento delle credenziali di un medico"""
         query = """
                 with nuovo as (
@@ -50,11 +50,13 @@ class GestoreDB:
         )
 
         connessione = None
+        cursore = None
 
         try:
             connessione = self._get_connessione()
             cursore = connessione.cursor()
             cursore.execute(query, valori)
+            connessione.commit()
             print(f"Medico {medico.nome} {medico.cognome} inserito con successo!")
             return True
         except psycopg2.IntegrityError as e:
@@ -78,7 +80,6 @@ if __name__ == "__main__":
     """Test di apertura della connessione"""
     print("Tentativo di connessione al database in corso...")
     test = GestoreDB()
-
     try:
         test_connessione = test._get_connessione()
         print("ACCESSO GARANTITO!")
@@ -86,3 +87,23 @@ if __name__ == "__main__":
     except Exception as e:
         print("ACCESSO NEGATO!")
         print(e)
+
+    credenziali_finte = Credenziali(
+        email="dott.mario.rossi@ospedale.it", 
+        password="password_sicura_123"
+    )
+    
+    import datetime
+    # Creiamo un oggetto Medico finto e gli passiamo le credenziali
+    medico_finto = Medico(
+        nome="Mario",
+        cognome="Rossi",
+        codice_fiscale="RSSMRA80A01H501Z",
+        data_di_nascita=datetime.date(1980, 1, 1), # Anno, Mese, Giorno
+        credenziali=credenziali_finte
+    )
+    
+    esito = test.inserisci_medico(medico_finto)
+    
+    if esito:
+        print("Credenziali inserite")
