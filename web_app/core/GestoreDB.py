@@ -41,13 +41,9 @@ class GestoreDB:
                 values (%s, %s, %s, %s, (select id from nuovo))
                 """
 
-        password_bytes = medico.credenziali.password.encode(CHIAVE)
-        sale = bcrypt.gensalt() # Genera un "salt" casuale per sicurezza extra
-        password = bcrypt.hashpw(password_bytes, sale).decode(CHIAVE)
-        
         valori = (
             medico.credenziali.email,
-            password,
+            medico.credenziali.password,
             medico.nome,
             medico.cognome,
             medico.codice_fiscale,
@@ -112,36 +108,3 @@ class GestoreDB:
                 cursore.close()
             if connessione:
                 connessione.close()
-
-
-if __name__ == "__main__":
-    """Test di apertura della connessione"""
-    print("Tentativo di connessione al database in corso...")
-    test = GestoreDB()
-    try:
-        test_connessione = test._get_connessione()
-        print("ACCESSO GARANTITO!")
-        test_connessione.close()
-    except Exception as e:
-        print("ACCESSO NEGATO!")
-        print(e)
-
-    credenziali_finte = Credenziali(
-        email="dott.mario.rossi@ospedale.it", 
-        password="password_sicura_123"
-    )
-    
-    import datetime
-    # Creiamo un oggetto Medico finto e gli passiamo le credenziali
-    medico_finto = Medico(
-        nome="Mario",
-        cognome="Rossi",
-        codice_fiscale="RSSMRA80A01H501Z",
-        data_di_nascita=datetime.date(1980, 1, 1), # Anno, Mese, Giorno
-        credenziali=credenziali_finte
-    )
-    
-    esito = test.inserisci_medico(medico_finto)
-    
-    if esito:
-        print("Credenziali inserite")
