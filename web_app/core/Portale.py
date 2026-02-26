@@ -54,14 +54,6 @@ class Portale:
 
     def _login(self):
         """Login"""
-        if "mostra_popup_recupero" not in st.session_state:
-            st.session_state.mostra_popup_recupero = False
-        
-        # Se l'interruttore è attivo, il Controller lancia il popup
-        if st.session_state.mostra_popup_recupero:
-            self._modal_recupero_account()
-        # ----------------------------------
-
         st.subheader("Accesso")
         email = st.text_input("Email", key="login_email", on_change=forza_minuscolo_login)
         password = st.text_input("Password", type="password", key="login_password")
@@ -83,11 +75,18 @@ class Portale:
 
         st.divider() # Linea estetica
 
-        # Il tasto che attiva il sistema di controllo
-        if st.button("Password dimenticata o 2FA perso?", type="secondary"):
+        # Inizializziamo l'interruttore
+        if "mostra_popup_recupero" not in st.session_state:
+            st.session_state.mostra_popup_recupero = False
+
+        if st.button("Password dimenticata o 2FA perso?", type="secondary", use_container_width=True):
             st.session_state.mostra_popup_recupero = True
-            st.session_state.step_recupero = 1 # Reset dello step al primo click
+            st.session_state.step_recupero = 1 # Forza il ritorno allo step 1
             st.rerun()
+
+        # Se l'interruttore è acceso, mostriamo il popup
+        if st.session_state.mostra_popup_recupero:
+            self._modal_recupero_account()
             
     def _register(self):
         """Registrazione"""
@@ -217,62 +216,66 @@ class Portale:
 
     @st.dialog("Recupero Account")
     def _modal_recupero_account(self):
-        # 1. CONTROLLO USCITA: Se l'utente chiude il dialog con la "X" di Streamlit, 
-        # dobbiamo resettare l'interruttore al prossimo giro.
-        
+        # Se non c'è uno step, iniziamo dal primo
+        if "step_recupero" not in st.session_state:
+            st.session_state.step_recupero = 1
+
+        # --- FUNZIONE DI PULIZIA (Per annullare tutto) ---
+        def reset_e_chiudi():
+            st.session_state.mostra_popup_recupero = False
+            if "step_recupero" in st.session_state: del st.session_state.step_recupero
+            if "otp_inviato" in st.session_state: del st.session_state.otp_inviato
+            if "email_target" in st.session_state: del st.session_state.email_target
+            st.rerun()
+
+        # --- STEP 1: RICHIESTA EMAIL ---
         if st.session_state.step_recupero == 1:
-            st.write("Step 1: Identificazione")
-            email_input = st.text_input("Inserisci la tua email", key="rec_email")
+            st.write("Inserisci l'email per ricevere il codice.")
+            email_rec = st.text_input("Email", key="email_rec_input")
             
-            if st.button("Invia Codice di Verifica", use_container_width=True):
-                email_p = email_input.strip().lower()
-                if self.db.controlla_esistenza_utente(email_p):
-                    # Generazione e Invio
-                    otp = self.email_service.genera_otp()
-                    if self.email_service.invia_otp(email_p, otp):
-                        # AGGIORNAMENTO STATO (Il Controllo)
-                        st.session_state.otp_inviato = otp
-                        st.session_state.email_target = email_p
-                        st.session_state.step_recupero = 2
-                        st.rerun() # Forza il controller a passare allo step 2
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Annulla", use_container_width=True):
+                    reset_e_chiudi() # <--- Qui resettiamo l'interruttore!
+            with col2:
+                if st.button("Invia OTP", type="primary", use_container_width=True):
+                    email_f = email_rec.strip().lower()
+                    if self.db.controlla_esistenza_utente(email_f):
+                        otp = self.email_service.genera_otp()
+                        if self.email_service.invia_otp(email_f, otp):
+                            st.session_state.otp_inviato = otp
+                            st.session_state.email_target = email_f
+                            st.session_state.step_recupero = 2
+                            st.rerun()
+                        else:
+                            st.error("Errore invio email.")
                     else:
-                        st.error("Errore tecnico nell'invio email.")
-                else:
-                    st.error("Email non trovata nel database.")
+                        st.error("Email non trovata.")
 
+        # --- STEP 2: VERIFICA E RESET ---
         elif st.session_state.step_recupero == 2:
-            st.write("Step 2: Verifica e Reset")
             st.info(f"Codice inviato a: {st.session_state.email_target}")
-            
-            codice_inserito = st.text_input("Codice OTP (6 cifre)", max_chars=6)
-            nuova_pass = st.text_input("Nuova Password", type="password")
-            conferma_pass = st.text_input("Conferma Password", type="password")
+            codice_u = st.text_input("Codice OTP", max_chars=6)
+            n_pass = st.text_input("Nuova Password", type="password")
+            c_pass = st.text_input("Conferma Password", type="password")
 
-            if st.button("Finalizza Reset", type="primary", use_container_width=True):
-                # --- LOGICA DI CONTROLLO VALIDAZIONE ---
-                if codice_inserito != st.session_state.otp_inviato:
-                    st.error("Codice OTP non valido.")
-                elif nuova_pass != conferma_pass:
-                    st.error("Le password non coincidono.")
-                elif not re.fullmatch(CHECK_PASSWORD, nuova_pass):
-                    st.error("La password deve essere di 8-16 caratteri con almeno una maiuscola ed un carattere speciale (@$!%*?&#-_)")
-                else:
-                    # Esecuzione nel DB
-                    hash_pw = bcrypt.hashpw(nuova_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                    if self.db.reset_totale_account(st.session_state.email_target, hash_pw):
-                        st.success("Account resettato con successo!")
-                        
-                        # RESET FINALE DEL SISTEMA DI CONTROLLO
-                        st.session_state.mostra_popup_recupero = False
-                        del st.session_state.step_recupero
-                        del st.session_state.otp_inviato
-                        
-                        import time
-                        time.sleep(2)
-                        st.rerun()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Annulla", use_container_width=True):
+                    reset_e_chiudi()
+            with col2:
+                if st.button("Reset Account", type="primary", use_container_width=True):
+                    if codice_u != st.session_state.otp_inviato:
+                        st.error("OTP errato.")
+                    elif n_pass != c_pass:
+                        st.error("Le password non coincidono.")
+                    elif not re.fullmatch(CHECK_PASSWORD, n_pass):
+                        st.error("Password troppo debole.")
                     else:
-                        st.error("Errore nel salvataggio dei dati.")
-            
-            if st.button("Torna indietro"):
-                st.session_state.step_recupero = 1
-                st.rerun()
+                        # Successo!
+                        hash_n = bcrypt.hashpw(n_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                        if self.db.reset_totale_account(st.session_state.email_target, hash_n):
+                            st.success("Reset effettuato!")
+                            import time
+                            time.sleep(2)
+                            reset_e_chiudi() # Chiudiamo tutto e torniamo al login
