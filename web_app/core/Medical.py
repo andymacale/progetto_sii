@@ -1,14 +1,15 @@
 import streamlit as st
 import re
 from datetime import date
-
-
-CHECK_ETA = r"^(0|[1-9]|[1-9][0-9]|10[0-9]|110)$"
-
+import bcrypt
+import time
+from core.costanti import CHIAVE, CHECK_ETA, CHECK_PASSWORD
 
 class Medical:
-    def __init__(self):
-        self.utente_corrente = st.session_state.dati_utente
+    def __init__(self, db_gestore):
+        self.db = db_gestore
+        if "dati_utente" in st.session_state:
+            self.utente_corrente = st.session_state.dati_utente
 
     def homepage(self):
         st.title(f"Bentornato {self.utente_corrente['nome']} {self.utente_corrente['cognome']}")
@@ -23,7 +24,7 @@ class Medical:
                 st.write("Profilo")
                 
                 if st.button("Cambia Password", use_container_width=True):
-                    st.toast("Funzionalità in arrivo!") 
+                    self._modalita_cambia_password() 
                     
                 st.divider()
                 
@@ -43,6 +44,35 @@ class Medical:
                 st.session_state['step_analisi'] = False
                 st.rerun()
 
+    @st.dialog("Cambia Password")
+    def _modalita_cambia_password(self):
+        vecchia = st.text_input("Vecchia password", type="password")
+        nuova = st.text_input("Nuova password", type="password")
+        conferma = st.text_input("Conferma password", type="password")
+
+        if st.button("Aggiorna", type="primary", use_container_width=True):
+            if not vecchia or not nuova or not conferma:
+                st.error("Tutti i campi sono obbligatori!")
+                return
+            if nuova != conferma:
+                st.error("La nuova password e la conferma password devo coincidere!")
+                return
+            if not re.fullmatch(CHECK_PASSWORD, nuova):
+                st.error("La password deve essere di 8-16 caratteri con almeno una maiuscola ed un carattere speciale (@$!%*?&#-_)")
+                return
+            email = self.utente_corrente['email']
+            if not self.db.verifica_login(email, vecchia):
+                st.error("La vecchia password e' errata!")
+                return
+            nuova_bytes = nuova.encode(CHIAVE)
+            sale = bcrypt.gensalt()
+            nuova_hash = bcrypt.hashpw(nuova_bytes, sale).decode(CHIAVE)
+            if self.db.aggiorna_password(email, nuova_hash):
+                st.success("Password aggiornata! Ricarico l'area medica...")
+                time.sleep(2)
+                st.rerun()
+            else:
+                st.error("Errore durante il salvataggio della nuova password")
 
 
     def _sidebar_header(self):

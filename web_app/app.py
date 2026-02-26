@@ -1,7 +1,10 @@
 import streamlit as st
 from core.Portale import Portale
 from core.Medical import Medical
+from core.GestoreDB import GestoreDB
 import os
+from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, CHECK_ETA
+
 
 
 # Grafica: carimento del file css
@@ -19,19 +22,13 @@ st.set_page_config(page_title="Medical", layout="centered")
 
 load_css("stile.css")
 
-# Inizializzi la sessione per il login
-if "utente_loggato" not in st.session_state:
-    st.session_state.utente_loggato = False
+if 'db' not in st.session_state:
+    st.session_state.db = GestoreDB()
 
-if "dati_utente" not in st.session_state:
-    st.session_state.dati_utente = None
-
-# Routing principale: Portale o Medical?
-if not st.session_state.utente_loggato:
-    # Utente non loggato
-    portale = Portale()
+if not st.session_state.get('utente_loggato', False):
+    portale = Portale() 
+    portale.db = st.session_state.db 
     portale.homepage()
 else:
-    # Utente loggato
-    medical = Medical()
-    medical.homepage()
+    area_medica = Medical(st.session_state.db)
+    area_medica.homepage()

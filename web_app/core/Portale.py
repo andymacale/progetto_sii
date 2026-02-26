@@ -8,11 +8,10 @@ import re
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 import codicefiscale
-
-
-CHECK_EMAIL = r"^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9.-]+$"
-CHECK_CF = r"^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$"
-CHIAVE = 'utf-8'
+from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE
+import pyotp
+import qrcode
+from io import BytesIO
 
 def forza_maiuscolo():
     if "reg_cf" in st.session_state:
@@ -25,6 +24,16 @@ def forza_minuscolo():
 def forza_minuscolo_login():
     if "login_email" in st.session_state:
         st.session_state.login_email = st.session_state.login_email.lower()
+
+def valuta_password(pwd: str) -> str:
+    """Valuta la password in Debole, Media, Forte"""
+    if not re.fullmatch(CHECK_PASSWORD, pwd):
+        return "Debole"
+    ha_numeri = bool(re.search(r"[0-9]", pwd))
+    ha_minuscole = bool(re.search(r"[a-z]", pwd))
+    if len(pwd) >= 12 and ha_numeri and ha_minuscole:
+        return "Forte"
+    return "Media"
 
 class Portale:
 
@@ -47,15 +56,17 @@ class Portale:
         email = st.text_input("Email", key="login_email", on_change=forza_minuscolo_login)
         password = st.text_input("Password", type="password", key="login_password")
         if st.button("Accedi", type="primary"):
-            if not re.fullmatch(CHECK_EMAIL, email):
-                st.error("Formato email non valido!")
+            email = email.strip().lower()
+            if not re.fullmatch(CHECK_EMAIL, email) or not re.fullmatch(CHECK_PASSWORD, password):
+                st.error("Email o password errati!")
             else:
                 utente = self.db.verifica_login(email, password)
                 if utente:
-                    st.success(f"Bentornato {utente['nome']} {utente['cognome']}")
-                    st.session_state.utente_loggato = True
-                    st.session_state.dati_utente = utente
-                    st.rerun()
+                    segreto = self.db.get_segreto_2fa(email)
+                    if not segreto:
+                        self._modalita_setup_2fa(utente)
+                    else:
+                        self._modalita_verifica_2fa(utente, segreto)
                 else:
                     st.error("Email o password errati!")
 
@@ -65,13 +76,15 @@ class Portale:
         cognome = st.text_input("Cognome")
         codice_fiscale = st.text_input("Codice fiscale", key="reg_cf", on_change=forza_maiuscolo)
         data_di_nascita = st.date_input("Data di nascita", min_value=date(1920, 1, 1), max_value=date.today(), format="DD/MM/YYYY")
-        email = st.text_input("Email", key="reg_email", on_change=forza_maiuscolo)
+        email = st.text_input("Email", key="reg_email", on_change=forza_minuscolo)
         password = st.text_input("Password", type="password", key="reg_pass")
         conferma_password = st.text_input("Conferma Password", type="password", key="reg_pass_conf")
         if st.button("Registrati", type="primary", use_container_width=True):
             if not nome or not cognome or not codice_fiscale or not data_di_nascita or not email or not password:
                 st.error("Tutti i campi sono obbligatori!")
                 return
+            email = email.strip().lower()
+            codice_fiscale = codice_fiscale.strip().upper()
             if password != conferma_password:
                 st.error("Le due password devono coincidere!")
                 return
@@ -89,7 +102,14 @@ class Portale:
                 email_validata = info.normalized
             except EmailNotValidError as e:
                 st.error("Dominio email inesistente")
-            
+            forza = valuta_password(password)
+            if forza == "Debole":
+                st.error("La password deve essere di 8-16 caratteri con almeno una maiuscola ed un carattere speciale (@$!%*?&#-_)")
+                return
+            elif forza == "Media":
+                st.warning("Password accettabile, ma ti consiglio di aggiungere un numero ed una minuscola per renderla più sicura")
+            else:
+                st.success("Password forte!")
             password_bytes = password.encode(CHIAVE)
             sale = bcrypt.gensalt()
             password_criptata = bcrypt.hashpw(password_bytes, sale).decode(CHIAVE)
@@ -101,5 +121,78 @@ class Portale:
                                   credenziali=credenziali_nuove)
             if self.db.inserisci_medico(medico_nuovo):
                 st.success("Registrazione avvenuta con successo")
+                time.sleep(2)
+                st.rerun()
             else:
                 st.error("Errore durante la registrazione")
+
+    @st.dialog("Configura l'Autenticazione a due fattori (Obbligatorio!)")
+    def _modalita_setup_2fa(self, utente):
+        email = utente['email']
+
+        if "temp_secret" not in st.session_state:
+            st.session_state.temp_secret = pyotp.random_base32()
+        segreto = st.session_state.temp_secret
+        totp = pyotp.TOTP(segreto)
+        uri = totp.provisioning_uri(name=email, issuer_name="MedVision AI")
+        
+        qr = qrcode.make(uri)
+        buf = BytesIO()
+        qr.save(buf, format="PNG")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(buf.getvalue(), caption="Inquadra con l'App")
+            
+        st.divider()
+        st.write("Dopo aver inquadrato il codice, inserisci qui sotto i **6 numeri** che vedi sull'App per confermare l'attivazione.")
+        
+        codice_inserito = st.text_input("Codice a 6 cifre", max_chars=6)
+        
+        if st.button("Verifica e Attiva", type="primary", use_container_width=True):
+            if len(codice_inserito) != 6 or not codice_inserito.isdigit():
+                st.error("Il codice deve essere di 6 numeri.")
+                return
+                
+            # Verifichiamo se il codice inserito corrisponde al segreto
+            if totp.verify(codice_inserito):
+                # SUCCESSO! Salviamo il segreto nel DB
+                if self.db.salva_segreto_2fa(email, segreto):
+                    st.success("Autenticazione 2FA configurata! Accesso in corso...")
+                    # Puliamo la variabile temporanea
+                    del st.session_state.temp_secret
+                    
+                    # Finalmente, diamo l'ok per il login!
+                    st.session_state.utente_loggato = True
+                    st.session_state.dati_utente = utente
+                    time.sleep(2)
+                    st.rerun()
+                else:
+                    st.error("Errore durante il salvataggio nel database!")
+            else:
+                st.error("Codice errato o scaduto. Riprova.")
+
+    @st.dialog("Autenticazione a due fattori")
+    def _modalita_verifica_2fa(self, utente, segreto_salvato):
+        st.write("Inserisci il codice a 6 cifre dall'app Google Authenticator.")
+        
+        codice_inserito = st.text_input("Codice 2FA", max_chars=6, key="input_2fa")
+        
+        if st.button("Verifica", type="primary", use_container_width=True):
+            if len(codice_inserito) != 6 or not codice_inserito.isdigit():
+                st.error("Il codice deve essere di 6 numeri!")
+                return
+                
+            # Generiamo l'oggetto TOTP usando il segreto salvato nel database
+            totp = pyotp.TOTP(segreto_salvato)
+            
+            # Verifichiamo se il codice digitato è corretto in questo momento
+            if totp.verify(codice_inserito):
+                st.success("Codice corretto! Accesso in corso...")
+                st.session_state.utente_loggato = True
+                st.session_state.dati_utente = utente
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Codice errato o scaduto. Riprova.")
+        

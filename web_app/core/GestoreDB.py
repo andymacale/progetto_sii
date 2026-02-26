@@ -6,8 +6,7 @@ from dominio.Medico import Medico
 from dominio.Credenziali import Credenziali
 from datetime import date
 from dotenv import load_dotenv, find_dotenv
-
-CHIAVE = 'utf-8'
+from core.costanti import CHIAVE
 
 class GestoreDB:
     
@@ -108,3 +107,71 @@ class GestoreDB:
                 cursore.close()
             if connessione:
                 connessione.close()
+
+    def aggiorna_password(self, email: str, nuova: str) -> bool:
+        """Sovrascrive la vecchia password con la nuova"""
+        connessione = None
+        cursore = None
+
+        query = """
+            update credenziali set password = %s where email = %s
+            """
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (nuova, email))
+            connessione.commit()
+            return True
+        except Exception as e:
+            print(f"Errore durante l'aggiornamento password: {e}")
+            if connessione:
+                connessione.rollback()
+            return False
+        finally:
+            # Chiudi la connessione se e' stata aperta
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def get_segreto_2fa(self, email: str):
+        """Recupera il segreto 2FA dell'utente"""
+        query = "select segreto_2fa from credenziali where email=%s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (email,))
+            risultato = cursore.fetchone()
+            if not risultato:
+                return None
+            return risultato['segreto_2fa'] if isinstance(risultato, dict) else risultato[0]
+        except Exception as e:
+            print(f"Errore recupero 2FA: {e}")
+            return None
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def salva_segreto_2fa(self, email: str, segreto: str) -> bool:
+        """Salva il segreto 2FA generato nel database"""
+        query = "update credenziali set segreto_2fa = %s where email = %s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (segreto, email,))
+            connessione.commit()
+            return True
+        except Exception as e:
+            print(f"Errore salvataggio 2FA: {e}")
+            return False
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()  

@@ -10,4 +10,7 @@ psycopg2-binary>=2.9.9
 python-dotenv>=1.0.0
 bcrypt>=4.1.2
 email-validator
+pyotp
+qrcode
+Pillow
 codicefiscale>=0.1.1
