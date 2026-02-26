@@ -20,7 +20,7 @@ class EmailService:
 
     def invia_otp(self, destinatario, codice):
         if not self.mittente or not self.password:
-            print("❌ Errore: Credenziali email mancanti nel file .env")
+            print("Errore: Credenziali email mancanti nel file .env")
             return False
 
         msg = MIMEMultipart()
@@ -50,5 +50,5 @@ class EmailService:
             server.quit()
             return True
         except Exception as e:
-            print(f"❌ Errore invio email: {e}")
+            print(f"Errore invio email: {e}")
             return False
