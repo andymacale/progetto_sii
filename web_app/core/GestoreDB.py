@@ -175,3 +175,33 @@ class GestoreDB:
                 cursore.close()
             if connessione:
                 connessione.close()  
+
+    def controlla_esistenza_utente(self, email: str) -> bool:
+        query = "select 1 from credenziali where email = %s"
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (email,))
+            return cursore.fetchone() is not None
+        except: return False
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def reset_totale_account(self, email: str, nuovo_hash: str) -> bool:
+        # Questa query fa due cose: cambia la password e CANCELLA il vecchio 2FA (lo mette a null)
+        query = "update credenziali set password = %s, segreto_2fa = null where email = %s"
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (nuovo_hash, email))
+            connessione.commit()
+            return True
+        except: return False
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione: 
+                connessione.close()

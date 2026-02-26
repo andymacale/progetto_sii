@@ -12,6 +12,7 @@ from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE
 import pyotp
 import qrcode
 from io import BytesIO
+from core.EmailService import EmailService
 
 def forza_maiuscolo():
     if "reg_cf" in st.session_state:
@@ -39,6 +40,7 @@ class Portale:
 
     def __init__(self):
         self.db = GestoreDB()
+        self.email_service = EmailService()
 
     def homepage(self):
         st.title("Medical - Portale di accesso")
@@ -52,9 +54,18 @@ class Portale:
 
     def _login(self):
         """Login"""
+        if "mostra_popup_recupero" not in st.session_state:
+            st.session_state.mostra_popup_recupero = False
+        
+        # Se l'interruttore è attivo, il Controller lancia il popup
+        if st.session_state.mostra_popup_recupero:
+            self._modal_recupero_account()
+        # ----------------------------------
+
         st.subheader("Accesso")
         email = st.text_input("Email", key="login_email", on_change=forza_minuscolo_login)
         password = st.text_input("Password", type="password", key="login_password")
+
         if st.button("Accedi", type="primary"):
             email = email.strip().lower()
             if not re.fullmatch(CHECK_EMAIL, email) or not re.fullmatch(CHECK_PASSWORD, password):
@@ -70,6 +81,14 @@ class Portale:
                 else:
                     st.error("Email o password errati!")
 
+        st.divider() # Linea estetica
+
+        # Il tasto che attiva il sistema di controllo
+        if st.button("Password dimenticata o 2FA perso?", type="secondary"):
+            st.session_state.mostra_popup_recupero = True
+            st.session_state.step_recupero = 1 # Reset dello step al primo click
+            st.rerun()
+            
     def _register(self):
         """Registrazione"""
         nome = st.text_input("Nome")
@@ -195,4 +214,65 @@ class Portale:
                 st.rerun()
             else:
                 st.error("Codice errato o scaduto. Riprova.")
+
+    @st.dialog("Recupero Account")
+    def _modal_recupero_account(self):
+        # 1. CONTROLLO USCITA: Se l'utente chiude il dialog con la "X" di Streamlit, 
+        # dobbiamo resettare l'interruttore al prossimo giro.
         
+        if st.session_state.step_recupero == 1:
+            st.write("Step 1: Identificazione")
+            email_input = st.text_input("Inserisci la tua email", key="rec_email")
+            
+            if st.button("Invia Codice di Verifica", use_container_width=True):
+                email_p = email_input.strip().lower()
+                if self.db.controlla_esistenza_utente(email_p):
+                    # Generazione e Invio
+                    otp = self.email_service.genera_otp()
+                    if self.email_service.invia_otp(email_p, otp):
+                        # AGGIORNAMENTO STATO (Il Controllo)
+                        st.session_state.otp_inviato = otp
+                        st.session_state.email_target = email_p
+                        st.session_state.step_recupero = 2
+                        st.rerun() # Forza il controller a passare allo step 2
+                    else:
+                        st.error("Errore tecnico nell'invio email.")
+                else:
+                    st.error("Email non trovata nel database.")
+
+        elif st.session_state.step_recupero == 2:
+            st.write("Step 2: Verifica e Reset")
+            st.info(f"Codice inviato a: {st.session_state.email_target}")
+            
+            codice_inserito = st.text_input("Codice OTP (6 cifre)", max_chars=6)
+            nuova_pass = st.text_input("Nuova Password", type="password")
+            conferma_pass = st.text_input("Conferma Password", type="password")
+
+            if st.button("Finalizza Reset", type="primary", use_container_width=True):
+                # --- LOGICA DI CONTROLLO VALIDAZIONE ---
+                if codice_inserito != st.session_state.otp_inviato:
+                    st.error("Codice OTP non valido.")
+                elif nuova_pass != conferma_pass:
+                    st.error("Le password non coincidono.")
+                elif not re.fullmatch(CHECK_PASSWORD, nuova_pass):
+                    st.error("La password deve essere di 8-16 caratteri con almeno una maiuscola ed un carattere speciale (@$!%*?&#-_)")
+                else:
+                    # Esecuzione nel DB
+                    hash_pw = bcrypt.hashpw(nuova_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                    if self.db.reset_totale_account(st.session_state.email_target, hash_pw):
+                        st.success("Account resettato con successo!")
+                        
+                        # RESET FINALE DEL SISTEMA DI CONTROLLO
+                        st.session_state.mostra_popup_recupero = False
+                        del st.session_state.step_recupero
+                        del st.session_state.otp_inviato
+                        
+                        import time
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error("Errore nel salvataggio dei dati.")
+            
+            if st.button("Torna indietro"):
+                st.session_state.step_recupero = 1
+                st.rerun()
