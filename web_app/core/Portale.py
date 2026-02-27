@@ -97,6 +97,16 @@ class Portale:
         cognome = st.text_input("Cognome")
         codice_fiscale = st.text_input("Codice fiscale", key="reg_cf", on_change=forza_maiuscolo)
         data_di_nascita = st.date_input("Data di nascita", min_value=date(1920, 1, 1), max_value=date.today(), format="DD/MM/YYYY")
+        col1, col2 = st.columns(2)
+        with col1:
+            sesso_input = st.toggle("Sesso")
+        if sesso_input:
+            valore_sesso = "F"
+        else:
+            valore_sesso = "M"
+        with col2:
+            st.info(valore_sesso)
+        st.divider()
         email = st.text_input("Email", key="reg_email", on_change=forza_minuscolo)
         password = st.text_input("Password", type="password", key="reg_pass")
         conferma_password = st.text_input("Conferma Password", type="password", key="reg_pass_conf")
@@ -141,6 +151,7 @@ class Portale:
                                 cognome=cognome,
                                 codice_fiscale=codice_fiscale, 
                                 data_di_nascita=data_di_nascita,
+                                sesso=valore_sesso,
                                 credenziali=credenziali_nuove)
                 successo = self.db.inserisci_medico(medico_nuovo)
             if successo:

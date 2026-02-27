@@ -13,38 +13,67 @@ class Medical:
             self.utente_corrente = st.session_state.dati_utente
 
     def homepage(self):
-        st.title(f"Bentornato {self.utente_corrente['nome']} {self.utente_corrente['cognome']}")
-        col_titolo, col_menu = st.columns([8, 2])
-        
-        with col_titolo:
-            st.info("Qui i medici potranno visualizzare i pazienti ed effettuare le analisi sulle immagini.")
+        cognome = self.utente_corrente['cognome']
+        email = self.utente_corrente['email']
+        sesso = self.utente_corrente['sesso']
+        numero_pazienti = self.db.get_numero_pazienti(email)
 
-        with col_menu:
+        if sesso == 'F':
+            st.title(f"Bentornata Dott.ssa {cognome}")
+        else:
+            st.title(f"Bentornato Dott. {cognome}")
+        
+        st.divider()
+        
+        col_stat, col1, col2, col3 = st.columns([1, 1, 1, 1])
+
+        with col_stat:
+            st.metric("Pazienti in cura", value=numero_pazienti)
+        with col1:
             st.markdown("<br>", unsafe_allow_html=True)
-            with st.popover(f"{self.utente_corrente['cognome']}", use_container_width=True):
-                st.write("Profilo")
-                
+            if st.button("Aggiungi paziente", type="secondary", use_container_width=True):
+                self._modalita_nuovo_paziente()
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Nuove analisi", type="secondary", use_container_width=True):
+                st.session_state['step_analisi'] = True
+                st.rerun()
+        with col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            with st.popover("Menu Utente", use_container_width=True):
+                if sesso == 'F':
+                    st.title(f"**Dott.ssa {cognome}**")
+                else:
+                    st.title(f"**Dott. {cognome}**")
+                st.write(f"*{email}*")
+                st.divider()
                 if st.button("Cambia Password", use_container_width=True):
                     self._modalita_cambia_password() 
-                    
-                st.divider()
-                
                 if st.button("Esci", type="primary", use_container_width=True):
                     st.session_state.utente_loggato = False
                     st.session_state.dati_utente = None
                     st.rerun()
-        st.divider()
-        if 'step_analisi' not in st.session_state:
-            st.session_state['step_analisi'] = False
-        self._sidebar_header()
-        if not st.session_state['step_analisi']:
-            self._sidebar_form_paziente()
-        else:
-            self._pagina_principale_analisi()
-            if st.sidebar.button("Torna indietro"):
-                st.session_state['step_analisi'] = False
-                st.rerun()
 
+        st.divider()
+
+        # # 4. Gestione della navigazione (Sidebar e Main Page)
+        # if 'step_analisi' not in st.session_state:
+        #     st.session_state['step_analisi'] = False
+            
+        # self._sidebar_header()
+        
+        # if not st.session_state['step_analisi']:
+        #     self._sidebar_form_paziente()
+        # else:
+        #     self._pagina_principale_analisi()
+        #     if st.sidebar.button("Torna indietro"):
+        #         st.session_state['step_analisi'] = False
+        #         st.rerun()
+
+
+    def _modalita_nuovo_paziente(self):
+        st.info("Work in progress")
+    
     @st.dialog("Cambia Password")
     def _modalita_cambia_password(self):
         vecchia = st.text_input("Vecchia password", type="password")

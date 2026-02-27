@@ -3,7 +3,7 @@ from datetime import date
 
 class Paziente:
 
-    def __init__(self, id: str, nome: str, cognome: str, peso: float, data_di_nascita: date, codice_fiscale: str , medico: Medico):
+    def __init__(self, id: str, nome: str, cognome: str, peso: float, sesso:str, data_di_nascita: date, codice_fiscale: str , medico: Medico):
         self.id = id
         self.nome = nome
         self.cognome = cognome

@@ -36,8 +36,8 @@ class GestoreDB:
 	                insert into credenziali(email, password) values (%s, %s)
 	                returning id 
                 )
-                insert into medici(nome, cognome, codice_fiscale, data_di_nascita, credenziali_id)
-                values (%s, %s, %s, %s, (select id from nuovo))
+                insert into medici(nome, cognome, codice_fiscale, data_di_nascita, sesso, credenziali_id)
+                values (%s, %s, %s, %s, %s, (select id from nuovo))
                 """
 
         valori = (
@@ -46,7 +46,8 @@ class GestoreDB:
             medico.nome,
             medico.cognome,
             medico.codice_fiscale,
-            medico.data_di_nascita
+            medico.data_di_nascita,
+            medico.sesso
         )
 
         connessione = None
@@ -82,7 +83,7 @@ class GestoreDB:
         cursore = None
 
         query = """
-            select m.nome, m.cognome, c.password
+            select m.nome, m.cognome, m.sesso, c.password
             from medici m
             join credenziali c on c.id = m.credenziali_id
             where email = %s;
@@ -96,7 +97,7 @@ class GestoreDB:
             if record:
                 password_criptata = record['password'].encode(CHIAVE)
                 if bcrypt.checkpw(password_inserita.encode(CHIAVE), password_criptata):
-                    return {"nome": record['nome'], "cognome": record['cognome'], "email": email}
+                    return {"nome": record['nome'], "cognome": record['cognome'], "sesso": record['sesso'], "email": email}
             return None
         except Exception as e:
             print(f"Errore durante il login: {e}")
@@ -204,4 +205,28 @@ class GestoreDB:
             if cursore: 
                 cursore.close()
             if connessione: 
+                connessione.close()
+
+    def get_numero_pazienti(self, email: str):
+        """Restituisce il numero di pazienti"""
+        query = """
+                select count(p.id) as numero_pazienti
+                from medici m
+                join credenziali c on c.id = m.credenziali_id
+                left join pazienti p on m.id = p.medico_id
+                where c.email = %s
+                """
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (email,))
+            risultato = cursore.fetchone()
+            return risultato[0] if risultato else 0
+        except Exception as e: 
+            print(f"Errore conteggio dei pazienti: {e}")
+            return 0
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione:
                 connessione.close()
