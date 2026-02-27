@@ -4,6 +4,7 @@ from datetime import date
 import bcrypt
 import time
 from core.costanti import CHIAVE, CHECK_ETA, CHECK_PASSWORD
+from grafica.GestoreUI import GestoreUI
 
 class Medical:
     def __init__(self, db_gestore):
@@ -60,19 +61,20 @@ class Medical:
             if not re.fullmatch(CHECK_PASSWORD, nuova):
                 st.error("La password deve essere di 8-16 caratteri con almeno una maiuscola ed un carattere speciale (@$!%*?&#-_)")
                 return
-            email = self.utente_corrente['email']
-            if not self.db.verifica_login(email, vecchia):
-                st.error("La vecchia password e' errata!")
-                return
-            nuova_bytes = nuova.encode(CHIAVE)
-            sale = bcrypt.gensalt()
-            nuova_hash = bcrypt.hashpw(nuova_bytes, sale).decode(CHIAVE)
-            if self.db.aggiorna_password(email, nuova_hash):
-                st.success("Password aggiornata! Ricarico l'area medica...")
-                time.sleep(2)
-                st.rerun()
-            else:
-                st.error("Errore durante il salvataggio della nuova password")
+            with GestoreUI.spinner_medico("Cambio password in corso"):
+                email = self.utente_corrente['email']
+                if not self.db.verifica_login(email, vecchia):
+                    st.error("La vecchia password e' errata!")
+                    return
+                nuova_bytes = nuova.encode(CHIAVE)
+                sale = bcrypt.gensalt()
+                nuova_hash = bcrypt.hashpw(nuova_bytes, sale).decode(CHIAVE)
+                if self.db.aggiorna_password(email, nuova_hash):
+                    st.success("Password aggiornata! Ricarico l'area medica...")
+                    time.sleep(2)
+                    st.rerun()
+                else:
+                    st.error("Errore durante il salvataggio della nuova password")
 
 
     def _sidebar_header(self):

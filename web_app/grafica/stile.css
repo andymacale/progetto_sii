@@ -1,0 +1,104 @@
+.stApp {
+    background-color: #ffffff;
+    color: #2c3e50;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+}
+
+button[kind="primary"] {
+    background-color: #0056b3 ;
+    color: white ;
+    border-radius: 8px ;
+    border: none ;
+    padding: 0.5rem 1rem ;
+    font-weight: 600 ;
+    transition: all 0.2s ease-in-out ;
+}
+
+button[kind="primary"]:hover {
+    background-color: #004494 ;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) ;
+    transform: translateY(-1px) ;
+}
+
+button[kind="secondary"] {
+    border-radius: 8px ;
+    transition: all 0.2s ;
+}
+
+button[kind="secondary"]:hover {
+    color: #dc3545 ;
+    border-color: #dc3545 ;
+}
+
+input {
+    border-radius: 8px ;
+    border: 1px solid #dee2e6 ;
+}
+
+input:focus {
+    border-color: #0056b3 ;
+    box-shadow: 0 0 0 0.2rem rgba(0,86,179,0.25) ;
+}
+
+h1, h2, h3 {
+    color: #1a2a3a;
+    font-weight: 700 ;
+}
+
+div[data-testid="stNotification"] {
+    border-radius: 10px ;
+    border: none ;
+}
+
+/* =========================================
+   SPINNER GRAFICO MEDVISION
+   ========================================= */
+
+.med-spinner-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 10px 0;
+    background-color: #f8fcfd; /* Sfondo leggerissimo azzurro */
+    border-radius: 10px;
+    border: 1px solid #e1eef5;
+}
+
+.med-spinner {
+    width: 45px;
+    height: 45px;
+    /* Crea un cerchio semi-trasparente... */
+    border: 5px solid rgba(0, 91, 150, 0.15); 
+    /* ...con un lato solido blu medico che gira! */
+    border-top-color: #005b96; 
+    border-radius: 50%;
+    animation: rotazione-medica 1s ease-in-out infinite;
+}
+
+/* L'animazione che fa girare la rotella all'infinito */
+@keyframes rotazione-medica {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.med-spinner-testo {
+    margin-top: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 600;
+    color: #005b96;
+    letter-spacing: 0.5px;
+    animation: lampeggio-testo 1.5s infinite;
+}
+
+/* Un leggero effetto di dissolvenza sul testo per indicare il "caricamento" */
+@keyframes lampeggio-testo {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

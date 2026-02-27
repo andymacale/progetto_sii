@@ -5,6 +5,7 @@ import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
+from core.costanti import CHIAVE
 
 load_dotenv()
 
@@ -28,18 +29,17 @@ class EmailService:
         msg['To'] = destinatario
         msg['Subject'] = f"{codice} è il tuo codice di verifica MedVision"
 
-        corpo = f"""
-        <html>
-            <body style="font-family: sans-serif; text-align: center;">
-                <h2 style="color: #007BFF;">Sicurezza MedVision AI</h2>
-                <p>Abbiamo ricevuto una richiesta di accesso o recupero per il tuo account.</p>
-                <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; display: inline-block;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #333;">{codice}</span>
-                </div>
-                <p style="margin-top: 20px; color: #777;">Il codice scadrà tra pochi minuti. Non condividerlo con nessuno.</p>
-            </body>
-        </html>
-        """
+        try:
+            cartella_core = os.path.dirname(os.path.abspath(__file__))
+            cartella_root = os.path.dirname(cartella_core)
+            path = os.path.join(cartella_root, "grafica", "email.html")
+            with open(path, "r", encoding=CHIAVE) as file:
+                template_html = file.read()
+            corpo = template_html.format(codice=codice)
+        except Exception as e:
+            print("Errore nel caricamento dell'HTML")
+            corpo = f"Il tuo codice è: {codice}"
+
         msg.attach(MIMEText(corpo, 'html'))
 
         try:

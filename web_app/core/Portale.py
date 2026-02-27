@@ -13,6 +13,7 @@ import pyotp
 import qrcode
 from io import BytesIO
 from core.EmailService import EmailService
+from grafica.GestoreUI import GestoreUI
 
 def forza_maiuscolo():
     if "reg_cf" in st.session_state:
@@ -63,7 +64,9 @@ class Portale:
             if not re.fullmatch(CHECK_EMAIL, email) or not re.fullmatch(CHECK_PASSWORD, password):
                 st.error("Email o password errati!")
             else:
-                utente = self.db.verifica_login(email, password)
+                with GestoreUI.spinner_medico("Verifica credenziali"):
+                    time.sleep(1.2)
+                    utente = self.db.verifica_login(email, password)
                 if utente:
                     segreto = self.db.get_segreto_2fa(email)
                     if not segreto:
@@ -128,21 +131,22 @@ class Portale:
                 st.warning("Password accettabile, ma ti consiglio di aggiungere un numero ed una minuscola per renderla più sicura")
             else:
                 st.success("Password forte!")
-            password_bytes = password.encode(CHIAVE)
-            sale = bcrypt.gensalt()
-            password_criptata = bcrypt.hashpw(password_bytes, sale).decode(CHIAVE)
-            credenziali_nuove = Credenziali(email=email_validata, password=password_criptata)
-            medico_nuovo = Medico(nome=nome,
-                                  cognome=cognome,
-                                  codice_fiscale=codice_fiscale, 
-                                  data_di_nascita=data_di_nascita,
-                                  credenziali=credenziali_nuove)
-            if self.db.inserisci_medico(medico_nuovo):
-                st.success("Registrazione avvenuta con successo")
-                time.sleep(2)
-                st.rerun()
+            with GestoreUI.spinner_medico("Registrazione del profilo: "):
+                time.sleep(1.2)
+                password_bytes = password.encode(CHIAVE)
+                sale = bcrypt.gensalt()
+                password_criptata = bcrypt.hashpw(password_bytes, sale).decode(CHIAVE)
+                credenziali_nuove = Credenziali(email=email_validata, password=password_criptata)
+                medico_nuovo = Medico(nome=nome,
+                                cognome=cognome,
+                                codice_fiscale=codice_fiscale, 
+                                data_di_nascita=data_di_nascita,
+                                credenziali=credenziali_nuove)
+                successo = self.db.inserisci_medico(medico_nuovo)
+            if successo:
+                st.success("Registrazione avvenuta con successo!")
             else:
-                st.error("Errore durante la registrazione")
+                st.error("Errore durante la registrazione: email o codice fiscale già registrato!")
 
     @st.dialog("Configura l'Autenticazione a due fattori (Obbligatorio!)")
     def _modalita_setup_2fa(self, utente):
@@ -209,6 +213,7 @@ class Portale:
                 st.success("Codice corretto! Accesso in corso...")
                 st.session_state.utente_loggato = True
                 st.session_state.dati_utente = utente
+                
                 time.sleep(1)
                 st.rerun()
             else:
@@ -232,7 +237,6 @@ class Portale:
         if st.session_state.step_recupero == 1:
             st.write("Inserisci l'email per ricevere il codice.")
             email_rec = st.text_input("Email", key="email_rec_input")
-            
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Annulla", use_container_width=True):
@@ -241,8 +245,12 @@ class Portale:
                 if st.button("Invia OTP", type="primary", use_container_width=True):
                     email_f = email_rec.strip().lower()
                     if self.db.controlla_esistenza_utente(email_f):
-                        otp = self.email_service.genera_otp()
-                        if self.email_service.invia_otp(email_f, otp):
+                        with GestoreUI.spinner_medico("Invio dell'email in corso"):
+                            otp = self.email_service.genera_otp()
+                            inviata = self.email_service.invia_otp(email_f, otp)
+                            
+                            time.sleep(0.5)
+                        if inviata:
                             st.session_state.otp_inviato = otp
                             st.session_state.email_target = email_f
                             st.session_state.step_recupero = 2
@@ -273,9 +281,13 @@ class Portale:
                         st.error("Password troppo debole.")
                     else:
                         # Successo!
-                        hash_n = bcrypt.hashpw(n_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                        if self.db.reset_totale_account(st.session_state.email_target, hash_n):
+                        with GestoreUI.spinner_medico("Reset della password in corso"):
+                            
+                            time.sleep(1.5)
+                            hash_n = bcrypt.hashpw(n_pass.encode(CHIAVE), bcrypt.gensalt()).decode(CHIAVE)
+                            successo = self.db.reset_totale_account(st.session_state.email_target, hash_n)
+                        if successo:
                             st.success("Reset effettuato!")
-                            import time
-                            time.sleep(2)
+                            
+                            time.sleep(1)
                             reset_e_chiudi() # Chiudiamo tutto e torniamo al login
