@@ -7,6 +7,7 @@ from dominio.Credenziali import Credenziali
 from datetime import date
 from dotenv import load_dotenv, find_dotenv
 from core.costanti import CHIAVE
+from dominio.Paziente import Paziente
 
 class GestoreDB:
     
@@ -83,7 +84,7 @@ class GestoreDB:
         cursore = None
 
         query = """
-            select m.nome, m.cognome, m.sesso, c.password
+            select m.nome, m.cognome, m.sesso, m.data_di_nascita, m.codice_fiscale, c.password
             from medici m
             join credenziali c on c.id = m.credenziali_id
             where email = %s;
@@ -97,7 +98,11 @@ class GestoreDB:
             if record:
                 password_criptata = record['password'].encode(CHIAVE)
                 if bcrypt.checkpw(password_inserita.encode(CHIAVE), password_criptata):
-                    return {"nome": record['nome'], "cognome": record['cognome'], "sesso": record['sesso'], "email": email}
+                    #return {"nome": record['nome'], "cognome": record['cognome'], "sesso": record['sesso'], "email": email}
+                    nuove = Credenziali(email, password_criptata)
+                    nuovo = Medico(nome=record['nome'], cognome=record['cognome'], codice_fiscale=record['codice_fiscale'],
+                                   sesso=record['sesso'], data_di_nascita=record['data_di_nascita'], credenziali=nuove)
+                    return nuovo
             return None
         except Exception as e:
             print(f"Errore durante il login: {e}")
@@ -229,4 +234,43 @@ class GestoreDB:
             if cursore: 
                 cursore.close()
             if connessione:
+                connessione.close()
+
+    def inserisci_paziente(self, paziente: Paziente):
+        query = """
+                insert into pazienti(nome, cognome, codice_fiscale, data_di_nascita, peso, sesso, medico_id)
+                values (%s, %s, %s, %s, %s, %s,
+                (select m.id from medici m
+                join credenziali c on c.id = m.credenziali_id
+                where c.email = %s));
+                """
+        valori = (
+            paziente.nome,
+            paziente.cognome,
+            paziente.codice_fiscale,
+            paziente.data_di_nascita,
+            paziente.peso,
+            paziente.sesso,
+            paziente.medico.credenziali.email
+        )
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, valori)
+            connessione.commit()
+            print(f"Paziente {paziente.nome} {paziente.cognome} inserito con successo!")
+            return True
+        except psycopg2.IntegrityError as e:
+            if connessione:
+                connessione.rollback()
+            print(f"Errore di integrita': {e}")
+            return False
+        except Exception as e:
+            if connessione:
+                connessione.rollback()
+            return False
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione: 
                 connessione.close()

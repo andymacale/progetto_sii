@@ -4,7 +4,7 @@ from core.Medical import Medical
 from core.GestoreDB import GestoreDB
 from grafica.GestoreUI import GestoreUI
 import os
-from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, CHECK_ETA
+#from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
 
 
 

@@ -3,8 +3,15 @@ import re
 from datetime import date
 import bcrypt
 import time
-from core.costanti import CHIAVE, CHECK_ETA, CHECK_PASSWORD
+from core.costanti import CHIAVE, CHECK_PASSWORD, CHECK_CF, CHECK_ETA
 from grafica.GestoreUI import GestoreUI
+import codicefiscale
+from dominio.Paziente import Paziente
+
+
+def forza_maiuscolo_paziente():
+    if "cf_paziente" in st.session_state:
+        st.session_state.cf_paziente = st.session_state.cf_paziente.upper()
 
 class Medical:
     def __init__(self, db_gestore):
@@ -13,9 +20,9 @@ class Medical:
             self.utente_corrente = st.session_state.dati_utente
 
     def homepage(self):
-        cognome = self.utente_corrente['cognome']
-        email = self.utente_corrente['email']
-        sesso = self.utente_corrente['sesso']
+        cognome = self.utente_corrente.cognome
+        email = self.utente_corrente.credenziali.email
+        sesso = self.utente_corrente.sesso
         numero_pazienti = self.db.get_numero_pazienti(email)
 
         if sesso == 'F':
@@ -55,24 +62,6 @@ class Medical:
                     st.rerun()
 
         st.divider()
-
-        # # 4. Gestione della navigazione (Sidebar e Main Page)
-        # if 'step_analisi' not in st.session_state:
-        #     st.session_state['step_analisi'] = False
-            
-        # self._sidebar_header()
-        
-        # if not st.session_state['step_analisi']:
-        #     self._sidebar_form_paziente()
-        # else:
-        #     self._pagina_principale_analisi()
-        #     if st.sidebar.button("Torna indietro"):
-        #         st.session_state['step_analisi'] = False
-        #         st.rerun()
-
-
-    def _modalita_nuovo_paziente(self):
-        st.info("Work in progress")
     
     @st.dialog("Cambia Password")
     def _modalita_cambia_password(self):
@@ -105,78 +94,98 @@ class Medical:
                 else:
                     st.error("Errore durante il salvataggio della nuova password")
 
+    @st.dialog("Aggiungi Paziente")
+    def _modalita_nuovo_paziente(self):
+        st.title("Inserimento dati paziente")
 
-    def _sidebar_header(self):
-        with st.sidebar:
-            st.title("Sistema Diagnostico")
-            st.info("Versione beta 1.0")
+        nome = st.text_input("Nome").strip()
+        cognome = st.text_input("Cognome").strip()
 
-    def _sidebar_form_paziente(self):
-        with st.sidebar:
+        if not nome or not cognome:
+            st.info("Tutti i campi sono obbligatori")
+            return
 
-            st.title("Inserimento dati paziente")
+        st.divider()
 
-            etaCorretta = False
-            dataCorretta = False
+        etaCorretta = False
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            data_di_nascita = st.date_input("Data di nascita", min_value=date(1920, 1, 1), max_value=date.today(), format="DD/MM/YYYY")
             
-            # ETA' DEL PAZIENTE
-            eta_input = st.text_input('Eta del paziente possibilmente maggiorenne (0-110)', placeholder='Es. 50')
-            if eta_input:
-                # Inserimeto del dato
-                if re.fullmatch(CHECK_ETA, eta_input):
-                    etaCorretta = True
-                    eta_input = int(eta_input) # Sicuro e' intero: puoi effettuare la conversione
-                    if eta_input < 18:
-                        st.warning("ATTENZIONE: PAZIENTE PEDIATRICO!")
-                else:
-                    st.error("FORMATO ETA NON VALIDO: deve essere un intero tra 0 e 110!")
-            st.divider()
-
-            # SESSO DEL PAZIENTE
-            sesso_input = st.toggle("Sesso: M (OFF) / F (ON)")
-            if sesso_input:
-                valore_sesso = "F"
-            else:
-                valore_sesso = "M"
-            st.divider()
-
-            posizione_input = st.toggle("Posizione: AP (OFF) / PA (ON)")
-            if posizione_input:
-                valore_pos = "PA"
-            else:
-                valore_pos = "AP"
+        oggi = date.today()
+        eta = oggi.year - data_di_nascita.year
+        if (oggi.month, oggi.day) < (data_di_nascita.month, data_di_nascita.day):
+            eta -= 1
             
-            # POSIZIONE DEL PAZIENTE
-            oggi = date.today()
-            data_input = st.date_input("Data analisi", value=oggi, format="DD/MM/YYYY")
-            if data_input > oggi:
-                st.error("DATA NON VALIDA!")
-            dataCorretta = True
-            st.divider()
-            if etaCorretta and dataCorretta:
-                riepilogo = {"eta": eta_input,
-                            "sesso": valore_sesso,
-                            "posizione": valore_pos,
-                            "data": str(data_input) }
-                st.success("Dati corretti")
-                st.write("Riepilogo:")
-                st.json(riepilogo)
-                if st.button("Invia dati", type="primary"):
-                    st.session_state['dati_paziente'] = riepilogo
-                    st.session_state['step_analisi'] = True # Flag per cambiare pagina/vista
-                    st.rerun() # Ricarica la pagina per aggiornare la UI
+        with col2:
+            st.info(f"Età: {eta}")
+            
+        with col3:
+            if not re.fullmatch(CHECK_ETA, str(eta)):
+                st.error("L'età deve essere tra 0 e 110")
             else:
-                correggi = []
-                if not etaCorretta and eta_input:
-                    correggi.append("Eta")
-                if not dataCorretta:
-                    correggi. append("Data")
-                stringaErrore = ", ".join(correggi)
-                if len(correggi) > 0:
-                    st.error("Rileggi i campi: " + stringaErrore)
+                etaCorretta = True
+                if eta < 18:
+                    st.warning("Paziente pediatrico")
                 else:
-                    st.error("Inserire l'età")
+                    st.success("✔")
+        if not etaCorretta:
+            return 
+
+        st.divider()
+
+        peso = st.number_input("Peso (kg)", min_value=2.0, max_value=300.0, value=70.0, step=0.5, format="%.1f")
         
+        st.divider()
+        col4, col5 = st.columns(2)
+        with col4:
+            sesso = st.toggle("Sesso")
+        if sesso:
+            valore_sesso = "F"
+        else:
+            valore_sesso = "M"
+        with col5:
+            st.info(f"{valore_sesso}")
+            
+        st.divider()
+
+        cfCorretto = False
+        codice_fiscale = st.text_input("Codice fiscale", key="cf_paziente", on_change=forza_maiuscolo_paziente)
+        codice_fiscale = codice_fiscale.strip().upper()
+        
+        if codice_fiscale: 
+            if not re.fullmatch(CHECK_CF, codice_fiscale):
+                st.error("Codice fiscale non valido (XXXXXX00X00X000X)!")
+            elif not codicefiscale.isvalid(codice_fiscale):
+                st.error("Codice fiscale non valido: l'ultima lettera non corrisponde!")
+            else:
+                st.success("✔")
+                cfCorretto = True
+
+        if not cfCorretto:
+            return
+
+        st.divider()
+
+        if st.button("Salva Paziente", type="primary", use_container_width=True):
+            nuovo = Paziente(nome, cognome, peso, valore_sesso, data_di_nascita, codice_fiscale, self.utente_corrente)
+            
+            with GestoreUI.spinner_medico("Salvataggio del paziente nel database ..."):
+                import time
+                time.sleep(1)
+                successo = self.db.inserisci_paziente(nuovo)
+                
+            if successo:
+                st.success("Paziente salvato con successo!")
+                if "cf_paziente" in st.session_state:
+                    del st.session_state.cf_paziente
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Errore nel salvataggio del paziente!")
+
+
+
 
     # Funzione simulata di analisi (Main Page)
     def _pagina_principale_analisi(self):

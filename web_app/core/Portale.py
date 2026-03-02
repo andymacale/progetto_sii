@@ -8,12 +8,13 @@ import re
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 import codicefiscale
-from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE
+from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
 import pyotp
 import qrcode
 from io import BytesIO
 from core.EmailService import EmailService
 from grafica.GestoreUI import GestoreUI
+
 
 def forza_maiuscolo():
     if "reg_cf" in st.session_state:
@@ -161,7 +162,7 @@ class Portale:
 
     @st.dialog("Configura l'Autenticazione a due fattori (Obbligatorio!)")
     def _modalita_setup_2fa(self, utente):
-        email = utente['email']
+        email = utente.credenziali.email
 
         if "temp_secret" not in st.session_state:
             st.session_state.temp_secret = pyotp.random_base32()
@@ -242,6 +243,7 @@ class Portale:
             if "step_recupero" in st.session_state: del st.session_state.step_recupero
             if "otp_inviato" in st.session_state: del st.session_state.otp_inviato
             if "email_target" in st.session_state: del st.session_state.email_target
+            if "tempo_invio_otp" in st.session_state: del st.session_state.tempo_invio_otp
             st.rerun()
 
         # --- STEP 1: RICHIESTA EMAIL ---
@@ -259,12 +261,13 @@ class Portale:
                         with GestoreUI.spinner_medico("Invio dell'email in corso"):
                             otp = self.email_service.genera_otp()
                             inviata = self.email_service.invia_otp(email_f, otp)
-                            
+                              
                             time.sleep(0.5)
                         if inviata:
                             st.session_state.otp_inviato = otp
                             st.session_state.email_target = email_f
                             st.session_state.step_recupero = 2
+                            st.session_state.tempo_invio_otp = time.time()
                             st.rerun()
                         else:
                             st.error("Errore invio email.")
@@ -274,15 +277,36 @@ class Portale:
         # --- STEP 2: VERIFICA E RESET ---
         elif st.session_state.step_recupero == 2:
             st.info(f"Codice inviato a: {st.session_state.email_target}")
+            tempo_trascorso = time.time() - st.session_state.tempo_invio_otp
+            rimanenti = RESET_TIMER - int(tempo_trascorso)
             codice_u = st.text_input("Codice OTP", max_chars=6)
             n_pass = st.text_input("Nuova Password", type="password")
             c_pass = st.text_input("Conferma Password", type="password")
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 if st.button("Annulla", use_container_width=True):
                     reset_e_chiudi()
             with col2:
+                if rimanenti > 0:
+                    st.button(f"Attendi {rimanenti} s", disabled=True, use_container_width=True)
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    if st.button("Reinvia OTP", use_container_width=True):
+                        with GestoreUI.spinner_medico("Nuovo invio in corso..."):
+                            nuovo_otp = self.email_service.genera_otp()
+                            esito = self.email_service.invia_otp(st.session_state.email_target, nuovo_otp)
+                            
+                        if esito:
+                            st.session_state.otp_inviato = nuovo_otp
+                            st.session_state.tempo_invio_otp = time.time() # Resetta il timer!
+                            st.success("Nuovo codice inviato!")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("Errore durante il reinvio!")
+            with col3:
                 if st.button("Reset Account", type="primary", use_container_width=True):
                     if codice_u != st.session_state.otp_inviato:
                         st.error("OTP errato.")

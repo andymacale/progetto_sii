@@ -3,3 +3,5 @@ CHECK_EMAIL = r"^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9.-]+$"
 CHECK_CF = r"^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$"
 CHECK_PASSWORD = r"^(?=.*[A-Z])(?=.*[@$!%*?&#\-_]).{8,16}"
 CHIAVE = 'utf-8'
+RESET_TIMER = 10
+
