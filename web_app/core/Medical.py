@@ -7,6 +7,7 @@ from core.costanti import CHIAVE, CHECK_PASSWORD, CHECK_CF, CHECK_ETA
 from grafica.GestoreUI import GestoreUI
 import codicefiscale
 from dominio.Paziente import Paziente
+from dominio.PreferenzaSessione import PreferenzaSessione
 
 
 def forza_maiuscolo_paziente():

@@ -14,6 +14,12 @@ import qrcode
 from io import BytesIO
 from core.EmailService import EmailService
 from grafica.GestoreUI import GestoreUI
+import uuid
+from streamlit_local_storage import LocalStorage
+import datetime
+from dominio.PreferenzaSessione import PreferenzaSessione
+
+local_storage = LocalStorage()
 
 
 def forza_maiuscolo():
@@ -91,6 +97,36 @@ class Portale:
         # Se l'interruttore è acceso, mostriamo il popup
         if st.session_state.mostra_popup_recupero:
             self._modal_recupero_account()
+
+    def _gestione_post_login(self, utente):
+        st.session_state.utente_loggato = True
+        st.session_state.dati_utente = utente
+
+        codice = self.db.get_preferenza_sessione(utente.credenziali.email)
+
+        try:
+            preferenza = PreferenzaSessione(codice)
+        except ValueError:
+            preferenza = PreferenzaSessione.SEMPRE
+
+        if preferenza == PreferenzaSessione.SEMPRE:
+            local_storage.deleteAll()
+        else:
+            ora_attuale = datetime.now()
+            if preferenza == PreferenzaSessione.ORA:
+                scadenza = ora_attuale + datetime.timedelta(hours=1)
+            elif preferenza == PreferenzaSessione.GIORNO:
+                scadenza = ora_attuale + datetime.timedelta(days=1)
+            elif preferenza == PreferenzaSessione.SETTIMANA:
+                scadenza = ora_attuale + datetime.timedelta(days=7)
+            else:
+                scadenza = None
+        
+            token_sicuro = str(uuid.uuid4())
+            self.db.salva_token_sessione(utente.credenziali.email, token_sicuro, scadenza)
+            local_storage.setItem("auth_token", token_sicuro)
+
+
             
     def _register(self):
         """Registrazione"""
@@ -197,8 +233,10 @@ class Portale:
                     del st.session_state.temp_secret
                     
                     # Finalmente, diamo l'ok per il login!
-                    st.session_state.utente_loggato = True
-                    st.session_state.dati_utente = utente
+                    #st.session_state.utente_loggato = True
+                    #st.session_state.dati_utente = utente
+
+                    self._gestisci_sessione_post_login(utente)
                     time.sleep(2)
                     st.rerun()
                 else:
@@ -223,8 +261,9 @@ class Portale:
             # Verifichiamo se il codice digitato è corretto in questo momento
             if totp.verify(codice_inserito):
                 st.success("Codice corretto! Accesso in corso...")
-                st.session_state.utente_loggato = True
-                st.session_state.dati_utente = utente
+                #st.session_state.utente_loggato = True
+                #st.session_state.dati_utente = utente
+                self._gestisci_sessione_post_login(utente)
                 
                 time.sleep(1)
                 st.rerun()

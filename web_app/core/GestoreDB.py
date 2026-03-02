@@ -274,3 +274,115 @@ class GestoreDB:
                 cursore.close()
             if connessione: 
                 connessione.close()
+
+    def get_preferenza_sessione(self, email):
+        query = "select preferenza_sessione from credenziali where email = %s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (email,))
+            risultato = cursore.fetchone()
+            if risultato and risultato[0]:
+                return risultato
+            return "Sempre"
+        except:
+            return "Sempre"
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def aggiorna_preferenza_sessione(self, email, nuova):
+        query = "update credenziali set %s = 'Mai' where email = %s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (nuova, email,))
+            connessione.commit()
+            return True
+        except Exception as e:
+            print(f"Errore aggiornamento preferenza sessione: {e}")
+            return False
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close() 
+
+    def salva_token_sessione(self, email, token, scadenza):
+        query = "update credenziali set token_sessione = %s, scadenza_token = %s where email = %s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (token, scadenza, email,))
+            connessione.commit()
+            return True
+        except Exception as e:
+            print(f"Errore salvataggio token sessione: {e}")
+            return False
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def elimina_token_sessione(self, email):
+        query = "update credenziali set token_sessione = null, scadenza_token = null where email = %s"
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(query, (email,))
+            connessione.commit()
+            return True
+        except Exception as e:
+            print(f"Errore eliminazione preferenza sessione: {e}")
+            return False
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+
+    def verifica_token_sessione(self, token):
+        query = """
+                select m.nome, m.cognome, m.codice_fiscale, m.sesso, m.data_di_nascita,
+                   c.email, c.password, c.scadenza_token
+                from credenziali c
+                join medici m on c.id = m.credenziali_id
+                where c.token_sessione = %s
+                """
+        connessione = None
+        cursore = None
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor(cursor_factory=RealDictCursor)
+            cursore.execute(query, (token,))
+            record = cursore.fetchone()
+            if record:
+                credenziali_medico = Credenziali(record['email'], record['password'])
+                medico = Medico(nome=record['nome'], cognome=record['cognome'], 
+                                codice_fiscale=record['codice_fiscale'], sesso=record['sesso'], 
+                                data_di_nascita=record['data_di_nascita'], credenziali=credenziali_medico)
+                return {
+                    'medico': medico,
+                    'scadenza': record['scadenza_token']
+                }
+            return None
+        except:
+            return None
+        finally:
+            if cursore:
+                cursore.close()
+            if connessione:
+                connessione.close()
+        
+
