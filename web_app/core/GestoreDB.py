@@ -296,7 +296,7 @@ class GestoreDB:
                 connessione.close()
 
     def aggiorna_preferenza_sessione(self, email, nuova):
-        query = "update credenziali set %s = 'Mai' where email = %s"
+        query = "update credenziali set preferenza_sessione = %s where email = %s"
         connessione = None
         cursore = None
         try:
