@@ -8,7 +8,7 @@ import re
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 import codicefiscale
-from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
+from costanti.parametri import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
 import pyotp
 import qrcode
 from io import BytesIO
@@ -370,7 +370,7 @@ import re
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 import codicefiscale
-from core.costanti import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
+from costanti.parametri import CHECK_CF, CHECK_EMAIL, CHECK_PASSWORD, CHIAVE, RESET_TIMER
 import pyotp
 import qrcode
 from io import BytesIO

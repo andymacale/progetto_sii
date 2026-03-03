@@ -9,7 +9,11 @@ import os
 from datetime import datetime
 
 # Grafica: carimento del file css
-st.set_page_config(page_title="Medical", layout="centered")
+st.set_page_config(
+    page_title="Medical", 
+    page_icon=GestoreUI.carica_icona(),
+    layout="centered"
+)
 
 GestoreUI.carica_css()
 
@@ -22,30 +26,11 @@ local_storage = LocalStorage()
 # 1. SCRITTURA E CANCELLAZIONE (JS BLINDATO)
 # ==========================================
 if st.session_state.get("comando_salva_token"):
-    token = st.session_state.comando_salva_token
-    # NON mettiamo height=0 altrimenti Streamlit lo nasconde troppo!
-    components.html(f"""
-        <script>
-            try {{
-                window.parent.localStorage.setItem('auth_token', '{token}');
-                console.log("[Medical App] Token salvato con successo nel browser!");
-            }} catch (e) {{
-                console.error("[Medical App] Errore salvataggio LocalStorage:", e);
-            }}
-        </script>
-    """, height=0)
-    # 💡 TRUCCO MAGICO: NON cancelliamo più il comando qui! 
-    # Lasciandolo vivo, il browser rinfresca il token ad ogni re-render.
+    GestoreUI.esegui_js_salva_token(st.session_state.comando_salva_token)
 
 if st.session_state.get("comando_elimina_token"):
-    components.html("""
-        <script>
-            window.parent.localStorage.removeItem('auth_token');
-            console.log("🗑️ [Medical App] Token eliminato dal browser!");
-        </script>
-    """, height=0)
+    GestoreUI.esegui_js_elimina_token()
     st.session_state.comando_elimina_token = False
-    # Puliamo l'interruttore di salvataggio
     if "comando_salva_token" in st.session_state:
         del st.session_state["comando_salva_token"]
 
@@ -65,7 +50,7 @@ if not st.session_state.get('utente_loggato', False):
             if scadenza is None or datetime.now() < scadenza:
                 st.session_state.utente_loggato = True
                 st.session_state.dati_utente = medico
-                st.rerun() # 🔄 Entriamo!
+                st.rerun()
             else:
                 st.session_state.db.elimina_token_sessione(medico.credenziali.email)
                 st.session_state.comando_elimina_token = True

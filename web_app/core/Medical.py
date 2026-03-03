@@ -3,7 +3,7 @@ import re
 from datetime import date
 import bcrypt
 import time
-from core.costanti import CHIAVE, CHECK_PASSWORD, CHECK_CF, CHECK_ETA
+from costanti.parametri import CHIAVE, CHECK_PASSWORD, CHECK_CF, CHECK_ETA
 from grafica.GestoreUI import GestoreUI
 import codicefiscale
 from dominio.Paziente import Paziente
