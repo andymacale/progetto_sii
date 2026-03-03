@@ -47,7 +47,8 @@ class GestoreUI:
     @staticmethod
     def esegui_js_salva_token(token):
         """Leggi il file salva_token.js e sostituisce il segnaposto con il token reale"""
-        path = os.path.join("grafica", "salva_token.js")
+        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(cartella_grafica, "salva_token.js")
         with open(path, "r", encoding=CHIAVE) as file_js:
             codice_js = file_js.read()
         codice_js = codice_js.replace("__TOKEN__", token)
@@ -56,7 +57,8 @@ class GestoreUI:
     @staticmethod
     def esegui_js_elimina_token():
         """Leggi il file elimina_token.js per l'eliminazione e lo esegue"""
-        path = os.path.join("grafica", "elimina_token.js")
+        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(cartella_grafica, "elimina_token.js")
         with open(path, "r", encoding=CHIAVE) as file_js:
             codice_js = file_js.read()
         components.html(f"<script>{codice_js}</script>",height=0)
