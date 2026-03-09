@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from costanti.parametri import CHIAVE
+from costanti.Home import Home
 
 load_dotenv()
 
@@ -30,9 +31,7 @@ class EmailService:
         msg['Subject'] = f"{codice} è il tuo codice di verifica MedVision"
 
         try:
-            cartella_core = os.path.dirname(os.path.abspath(__file__))
-            cartella_root = os.path.dirname(cartella_core)
-            path = os.path.join(cartella_root, "grafica", "email.html")
+            path = os.path.join(Home.GRAFICA, "email.html")
             with open(path, "r", encoding=CHIAVE) as file:
                 template_html = file.read()
             corpo = template_html.format(codice=codice)

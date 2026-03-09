@@ -4,14 +4,17 @@ from contextlib import contextmanager
 from costanti.parametri import CHIAVE
 import streamlit.components.v1 as components
 import time
+from costanti.Home import Home
+
 
 class GestoreUI:
 
     @staticmethod
     def carica_css(nome_file="stile.css"):
         """Carica il file CSS nell'app"""
-        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(cartella_grafica, nome_file)
+        # cartella_grafica = os.path.dirname(os.path.abspath(__file__))
+        # path = os.path.join(cartella_grafica, nome_file)
+        path = os.path.join(Home.GRAFICA, nome_file)
         try:
             with open(path, "r", encoding=CHIAVE) as file:
                 st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
@@ -21,17 +24,14 @@ class GestoreUI:
     @staticmethod
     def carica_icona(nome_file="icona.png"):
         """Carica il file CSS nell'app"""
-        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(cartella_grafica, nome_file)
-        return path
+        return Home.GRAFICA
 
     @staticmethod
     @contextmanager
     def spinner_medico(messaggio="Elaborazione in corso"):
         """Genera uno spinner grafico durante i caricamenti medi"""
         placeholder = st.empty()
-        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(cartella_grafica, "spinner.html")
+        path = os.path.join(Home.GRAFICA, "spinner.html")
         try:
             with open(path, "r", encoding=CHIAVE) as file:
                 template_spinner = file.read()
@@ -47,8 +47,7 @@ class GestoreUI:
     @staticmethod
     def esegui_js_salva_token(token):
         """Leggi il file salva_token.js e sostituisce il segnaposto con il token reale"""
-        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(cartella_grafica, "salva_token.js")
+        path = os.path.join(Home.GRAFICA, "salva_token.js")
         with open(path, "r", encoding=CHIAVE) as file_js:
             codice_js = file_js.read()
         codice_js = codice_js.replace("__TOKEN__", token)
@@ -57,8 +56,7 @@ class GestoreUI:
     @staticmethod
     def esegui_js_elimina_token():
         """Leggi il file elimina_token.js per l'eliminazione e lo esegue"""
-        cartella_grafica = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(cartella_grafica, "elimina_token.js")
+        path = os.path.join(Home.GRAFICA, "elimina_token.js")
         with open(path, "r", encoding=CHIAVE) as file_js:
             codice_js = file_js.read()
         components.html(f"<script>{codice_js}</script>",height=0)
