@@ -3,7 +3,7 @@ import torch.nn as nn
 from src.models.UNet import UNet
 from src.models.ResNet import ResNet
 
-class DiagnosiVisiva:
+class DiagnosiVisiva(nn.Module):
     
     def __init__(self):
         """

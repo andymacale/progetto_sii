@@ -220,8 +220,11 @@ models_saved/
 
 # --- File pesanti o temporanei ---
 *.pkl
-*.pth
 *.h5
 __pycache__/
 venv/
 .env
+
+# --- CREDENTIALS (SENSITIVE) ---
+kaggle.json
+.kaggle/
