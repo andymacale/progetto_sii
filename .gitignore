@@ -209,7 +209,6 @@ __marimo__/
 # --- DATI TESI (NON CARICARE MAI) ---
 data/
 data/*
-models_saved/
 *.tar.gz
 *.zip
 *.csv
