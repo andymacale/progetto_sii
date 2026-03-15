@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score, recall_score
 import xgboost as xgb
 from sklearn.utils.class_weight import compute_sample_weight
 import numpy as np
@@ -30,10 +30,13 @@ VERBOSE = 100
 def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi, device, use_aug=True, epochs=30):
     tag = "AUG" if use_aug else "NOAUG"
     print(f"\n--- TRAINING MODELLO VISIVO ({tag}) ---")
+    checkpoint_path = f"last_checkpoint_{tag.lower()}.pth"
+    best_model_path = f"best_model_vision_{tag.lower()}.pth"
+
 
     t_aug = aug_tf if use_aug else None
-    train_ds = RXToraceDataset(train_set, path, base_tf, t_aug)
-    val_ds = RXToraceDataset(validation_set, path, base_tf)
+    train_ds = RXToraceDataset(train_set, path, base_tf, t_aug, True)
+    val_ds = RXToraceDataset(validation_set, path, base_tf, False)
 
     # num_workers=4 sfrutta meglio le CPU degli Studio
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
@@ -46,9 +49,23 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
     # GradScaler non deprecato per precisione mista
     scaler = torch.amp.GradScaler('cuda') 
     
-    best = 0.0
+    best_f1 = 0.0
     start_epoch = 0
-    checkpoint_path = f"last_checkpoint_{tag.lower()}.pth"
+    history = {'loss': [], 'f1': [], 'acc': [], 'recall': []}
+
+    if os.path.exists(checkpoint_path):
+        print(f"Rilevato checkpoint esistente: {checkpoint_path}. Ripristino in corso...")
+        checkpoint = torch.load(checkpoint_path)
+        
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scaler.load_state_dict(checkpoint['scaler_state_dict'])
+        
+        start_epoch = checkpoint['epoch']
+        best_f1 = checkpoint.get('best_f1', 0.0)
+        history = checkpoint['history'] 
+        
+        print(f"Ripresa addestramento dall'epoca {start_epoch + 1}. Miglior F1 precedente: {best_f1:.4f}")
 
     # Logica di ripristino per gestire il timeout di 4 ore
     if os.path.exists(checkpoint_path):
@@ -87,13 +104,17 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
             logits, _ = model(img)
             all_p.extend(torch.argmax(logits, dim=1).cpu().numpy())
             all_l.extend(lbl.cpu().numpy())
+
+        e_loss = running_loss / len(train_loader)
+        acc = accuracy_score(all_l, all_p)
+        rec = recall_score(all_l, all_p, average='macro')
+        f1 = f1_score(all_l, all_p, average='weighted')
         
-        score = f1_score(all_l, all_p, average='weighted')
-        print(f"[{tag}] Epoca {epoch+1} - Loss: {running_loss/len(train_loader):.4f} - F1: {score:.4f}")
+        print(f"[{tag}] Ep {epoch+1}: Loss: {e_loss:.4f} | F1: {f1:.4f} | Acc: {acc:.4f} | Rec: {rec:.4f}")
         
-        if score > best:
-           best = score
-           torch.save(model.state_dict(), f"best_model_vision_{tag.lower()}.pth")
+        if f1 > best_f1:
+           best_f1 = f1
+           torch.save(model.state_dict(), f"best_f1_model_vision_{tag.lower()}.pth")
            print(f"Nuovo miglior modello {tag} salvato!")
         
         # Salvataggio persistente su Lightning AI
@@ -101,9 +122,13 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
             'epoch': epoch + 1,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            'scaler_state_dict': scaler.state_dict(),
+            'best_f1': best_f1,
+            'history': history # Salviamo la history per non perdere i grafici
         }, checkpoint_path)
+        print(f"Checkpoint epoca {epoch+1} salvato con successo.")
     
-    return model
+    return model, history
 
 def train_modello_clinico(train_set, validation_set, features):
     """
@@ -121,7 +146,7 @@ def train_modello_clinico(train_set, validation_set, features):
         learning_rate=LR, 
         max_depth=MAX_DEPTH, 
         objective='multi:softprob', 
-        num_class=4, 
+        num_class=5, 
         random_state=42
     )
 

@@ -10,7 +10,7 @@ class DiagnosiIntegrata:
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.modello_visivo = visiva.to(self.device)
         self.modello_clinico = clinica
-        self.classi = ["NEGATIVO", "A RISCHIO", "PRIMARIO", "METASTATICO"]
+        self.classi = ['NEGATIVO', 'A RISCHIO', 'TRAUMI', 'PRIMARIO', 'METASTATICO']
 
     def diagnosi(self, immagine, dati_clinici, peso_immagine=0.7, peso_clinica=0.3):
         """

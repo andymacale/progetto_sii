@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 class RXToraceDataset(Dataset):
-    def __init__(self, dataframe, cartella, transform_base=None, transform_aug=None):
+    def __init__(self, dataframe, cartella, transform_base=None, transform_aug=None, is_train=False):
         """
             Inizializza il dataset:
             dataframe: il train set, validation set e test test filtrati
@@ -16,7 +16,8 @@ class RXToraceDataset(Dataset):
         self.cartella = cartella
         self.base = transform_base
         self.aug = transform_aug
-
+        self.is_train = is_train
+    
     def __len__(self):
         return len(self.df)
     
@@ -26,10 +27,10 @@ class RXToraceDataset(Dataset):
         immagine = Image.open(path).convert('L') # conversione in scala di grigi
         label = self.df.loc[index, 'numero_severita'] # il target
         paziente_id = self.df.loc[index, 'subject_id']
-        # Solo se il numero di severità è 2 ed è il training set si esegue l'augmentation
-        if label == 2 and self.aug is not None:
+        classi_da_aumentare = [0, 1, 3, 4]
+        if self.is_train and label in classi_da_aumentare and self.aug is not None:
             immagine = self.aug(immagine)
-        elif self.base is not None:
+        else:
             immagine = self.base(immagine)
         label_tensor = torch.tensor(label, dtype=torch.long)
         return immagine, label_tensor, paziente_id

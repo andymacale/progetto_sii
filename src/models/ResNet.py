@@ -3,7 +3,7 @@ import torchvision.models as models
 
 class ResNet(nn.Module):
     
-    def __init__(self, num_classi=4):
+    def __init__(self, num_classi=5):
         """
             Costruttore della rete neurale che classifica i quattro casi (NEGATIVO, A RISCHIO, PRIMARIO E METASTATICO)
         """

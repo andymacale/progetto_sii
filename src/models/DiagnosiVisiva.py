@@ -11,7 +11,7 @@ class DiagnosiVisiva(nn.Module):
         """
         super(DiagnosiVisiva, self).__init__()
         self.unet = UNet()
-        self.resnet = ResNet(num_classi=4)
+        self.resnet = ResNet(num_classi=5)
 
     def forward(self, x):
         """

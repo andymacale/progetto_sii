@@ -12,7 +12,7 @@ class DiagnosiClinica:
         self.model = xgb.XGBClassifier()
         if model_path:
             self.model.load_model(model_path)
-        self.features = ['gender', 'anchor_age', 'ViewPosition', 'StudyDate', 'StudyTime']
+        self.features = ['gender', 'anchor_age', 'ViewPosition', 'los', 'admission_type']
     
     def predict(self, dati_pazienti):
         """
