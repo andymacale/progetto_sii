@@ -17,7 +17,7 @@ from src.models.DiagnosiClinica import DiagnosiClinica
 
 # IMMAGINI #
 EPOCHS = 30
-BATCH_SIZE = 8
+BATCH_SIZE = 128
 LEARNING_RATE = 5e-6
 WEIGHT_DECAY = 1e-5
 NUM_WORKER = 2
@@ -85,7 +85,7 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
             optimizer.zero_grad() 
 
             # Autocast moderno per T4
-            with torch.amp.autocast('cuda'):
+            with torch.amp.autocast('cuda', dtype=torch.bfloat16):
                 logits, _ = model(img)
                 loss = criterion(logits, lbl)
             
