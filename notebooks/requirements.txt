@@ -1,6 +1,7 @@
 # --- Core Deep Learning (Vision) ---
 torch>=2.5.0
 torchvision>=0.20.0
+pyarrow
 
 # --- Machine Learning & Dati Clinici ---
 xgboost>=2.1.0

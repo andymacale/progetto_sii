@@ -50,6 +50,9 @@ class Evaluator:
         """
             Genera l'andamento delle metriche
         """
+        if not history or not any(history.values()):
+            print(f"Errore: Il dizionario history per '{titolo}' è vuoto o nullo.")
+            return
         metrics = ['loss', 'f1', 'acc', 'recall']
         metric_names = ['Loss (CrossEntropy)', 'F1-Score (Weighted)', 'Accuracy', 'Recall (Macro)']
         colors = ['#c0392b', '#2980b9', '#27ae60', '#f39c12']
@@ -61,6 +64,12 @@ class Evaluator:
         epoche = range(1, len(history['loss']) + 1)
         
         for ind, (metric, name, color) in enumerate(zip(metrics, metric_names, colors)):
+            data = history.get(metric, [])
+            if len(data) == 0:
+                axes[ind].text(0.5, 0.5, f"Dati {name} non disponibili", 
+                             ha='center', va='center', transform=axes[ind].transAxes)
+                continue
+            
             axes[ind].plot(epoche, history[metric], label=name, color=color, marker='o', linewidth=2)
             axes[ind].set_title(f'Evoluzione {name}', fontsize=14)
             axes[ind].set_xlabel('Epoca')

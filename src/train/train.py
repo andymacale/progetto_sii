@@ -16,11 +16,11 @@ from src.models.DiagnosiVisiva import DiagnosiVisiva
 from src.models.DiagnosiClinica import DiagnosiClinica
 
 # IMMAGINI #
-EPOCHS = 30
+EPOCHS = 20
 BATCH_SIZE = 128
-LEARNING_RATE = 5e-6
+LEARNING_RATE = 5e-5
 WEIGHT_DECAY = 1e-5
-NUM_WORKER = 2
+NUM_WORKER = 8
 # CLINICI #
 N_ESTIMATORS = 500
 LR = 0.01
@@ -39,8 +39,8 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
     val_ds = RXToraceDataset(validation_set, path, base_tf, False)
 
     # num_workers=4 sfrutta meglio le CPU degli Studio
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKER, persistent_workers=True)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKER, persistent_workers=True)
 
     model = DiagnosiVisiva().to(device)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
@@ -63,17 +63,9 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
         
         start_epoch = checkpoint['epoch']
         best_f1 = checkpoint.get('best_f1', 0.0)
-        history = checkpoint['history'] 
+        history = checkpoint.get('history', {'loss': [], 'f1': [], 'acc': [], 'recall': []})
         
         print(f"Ripresa addestramento dall'epoca {start_epoch + 1}. Miglior F1 precedente: {best_f1:.4f}")
-
-    # Logica di ripristino per gestire il timeout di 4 ore
-    if os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict']) # Corretto qui
-        start_epoch = checkpoint['epoch']
-        print(f"Ripresa addestramento dall'epoca {start_epoch}")
 
     for epoch in range(start_epoch, epochs):
         model.train()
@@ -109,13 +101,18 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
         acc = accuracy_score(all_l, all_p)
         rec = recall_score(all_l, all_p, average='macro')
         f1 = f1_score(all_l, all_p, average='weighted')
+
+        history['loss'].append(e_loss)
+        history['acc'].append(acc)
+        history['recall'].append(rec)
+        history['f1'].append(f1)
         
         print(f"[{tag}] Ep {epoch+1}: Loss: {e_loss:.4f} | F1: {f1:.4f} | Acc: {acc:.4f} | Rec: {rec:.4f}")
         
         if f1 > best_f1:
            best_f1 = f1
-           torch.save(model.state_dict(), f"best_f1_model_vision_{tag.lower()}.pth")
-           print(f"Nuovo miglior modello {tag} salvato!")
+           torch.save(model.state_dict(), best_model_path)
+           print(f"Nuovo miglior modello {tag} salvato in {best_model_path}!")
         
         # Salvataggio persistente su Lightning AI
         torch.save({
