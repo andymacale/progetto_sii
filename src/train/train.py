@@ -27,7 +27,7 @@ LR = 0.01
 MAX_DEPTH = 6
 VERBOSE = 100
 
-def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi, device, use_aug=True, epochs=30):
+def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi, device, use_aug=True, epochs=EPOCHS):
     tag = "AUG" if use_aug else "NOAUG"
     print(f"\n--- TRAINING MODELLO VISIVO ({tag}) ---")
     checkpoint_path = f"last_checkpoint_{tag.lower()}.pth"
@@ -123,6 +123,7 @@ def train_modello_visivo(train_set, validation_set, path, base_tf, aug_tf, pesi,
             'best_f1': best_f1,
             'history': history # Salviamo la history per non perdere i grafici
         }, checkpoint_path)
+        print(f"{history}")
         print(f"Checkpoint epoca {epoch+1} salvato con successo.")
     
     return model, history
