@@ -25,3 +25,6 @@ tqdm>=4.66.0
 Pillow>=10.3.0
 missingno
 imblearn
+nltk
+gplearn
+tensorflow

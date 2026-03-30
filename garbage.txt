@@ -1,0 +1,18 @@
+create table admissions(
+	subject_id bigint not null,
+	hadm_id bigint primary key,
+	admittime timestamp not null,
+	dischtime timestamp not null,	
+	deathtime timestamp,	
+	admission_type varchar(100) not null,	
+	admit_provider_id varchar(100) not null,
+	admission_location varchar(100) not null,
+	discharge_location varchar(100),
+	insurance varchar(100) not null,	
+	"language" varchar(30) not null,	
+	marital_status varchar(100),	
+	race varchar(100) not null,	
+	edregtime datatime,	
+	edouttime timestamp,	
+	hospital_expire_flag int
+)
