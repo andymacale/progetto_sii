@@ -24,7 +24,7 @@ class GestoreUI:
     @staticmethod
     def carica_icona(nome_file="icona.png"):
         """Carica il file CSS nell'app"""
-        return Home.GRAFICA
+        return os.path.join(Home.GRAFICA, nome_file)
 
     @staticmethod
     @contextmanager
