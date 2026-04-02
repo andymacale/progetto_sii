@@ -7,20 +7,26 @@ if [ -z "$MEDICAL_HOME" ]; then
     exit 1
 fi
 
+sudo -v
+
+# Mantieni il sudo attivo per tutta la durata dell'installazione dei pacchetti
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
 # 2. Avvio Docker
 # -w "/workspace" dice a Docker di posizionarsi esattamente dove c'è app.py
 # -e PYTHONPATH="/workspace" assicura che Python trovi tutte le tue sottocartelle
-sudo docker run --gpus all -it --rm \
+
+screen -dmS sessione_sito bash -c "docker run --gpus all -it --rm \
     --name tesi_sito \
     --ipc=host \
-    --network="host" \
-    --env-file "$MEDICAL_HOME/web_app/.env" \
-    -v "$MEDICAL_HOME/web_app:/workspace" \
-    -e MEDICAL_HOME="web_app/workspace" \
-    -e PYTHONPATH="/workspace" \
-    -w "/workspace" \
+    --network='host' \
+    --env-file '$MEDICAL_HOME/web_app/.env' \
+    -v '$MEDICAL_HOME/web_app:/workspace' \
+    -e MEDICAL_HOME='web_app/workspace' \
+    -e PYTHONPATH='/workspace' \
+    -w '/workspace' \
     nvcr.io/nvidia/pytorch:25.02-py3 \
-    bash -c "pip install -r requirements.txt python-dotenv && streamlit run app.py --server.address 0.0.0.0"
+    bash -c 'pip install -r requirements.txt python-dotenv && streamlit run app.py --server.address 0.0.0.0' > notebook_log.txt 2>&1 &"
 
 # 3. Controllo Esito
 if [ $? -eq 0 ]; then
