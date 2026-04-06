@@ -35,7 +35,7 @@ class QuerySQL:
                     """
     
     INSERISCI_PAZIENTE = """
-                            insert into pazienti(nome, cognome, codice_fiscale, data_di_nascita, peso, sesso, medico_id)
+                            insert into pazienti(nome, cognome, codice_fiscale, data_di_nascita, altezza, sesso, medico_id)
                             values (%s, %s, %s, %s, %s, %s,
                             (select m.id from medici m
                             join credenziali c on c.id = m.credenziali_id
