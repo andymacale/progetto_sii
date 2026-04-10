@@ -33,14 +33,63 @@ class QuerySQL:
                         left join pazienti p on m.id = p.medico_id
                         where c.email = %s
                     """
+
+    VISUALIZZA_PAZIENTI = """
+                            select p.id, p.codice_fiscale, p.nome, p.cognome, max(v.data_visita::date) as ultima_visita
+                            from pazienti p
+                            left join visite v on v.paziente_id = p.id
+                            join medici m on m.id = p.medico_id
+                            join credenziali c on m.credenziali_id = c.id
+                            where c.email = %s
+                            group by p.id, p.nome, p.cognome
+                            order by ultima_visita desc nulls last
+                          """
     
     INSERISCI_PAZIENTE = """
-                            insert into pazienti(nome, cognome, codice_fiscale, data_di_nascita, altezza, sesso, medico_id)
-                            values (%s, %s, %s, %s, %s, %s,
+                            insert into pazienti(nome, cognome, codice_fiscale, data_di_nascita, altezza, sesso, bcpo, storia_oncologica, medico_id)
+                            values (%s, %s, %s, %s, %s, %s, %s, %s,
                             (select m.id from medici m
                             join credenziali c on c.id = m.credenziali_id
                             where c.email = %s));
                          """
+
+    TRANSAZIONE = "select 1"
+
+    LOCK = """
+            select 1
+            from pazienti
+            where codice_fiscale = %s for share
+           """
+
+    ANALISI_PAZIENTE = """
+                        create temporary table if not exists temp_analisi_paziente as
+                        select v.data_visita,
+                               v.tipo,
+                               vc.emoglobina,
+                               vc.leucociti,
+                               vc.piastrine,
+                               vc.creatinina,
+                               vc.glicemia,
+                               vc.saturazione_spo2,
+                               vc.ldh,
+                               vc.albumia,
+                               vc.peso,
+                               p.altezza,
+                               p.bcpo,
+                               p.storia_oncologica    
+                        from visite v
+                        join visite_cliniche vc on v.id = vc.visita_id
+                        join pazienti p on v.paziente_id = p.id
+                        where p.codice_fiscale = %s
+                       """
+
+    CHECK_PID = """
+                    select p.*
+                    from pazienti p
+                    join medici m on p.medico_id = m.id
+                    join credenziali c on c.id = m.credenziali_id
+                    where p.id = %s and c.email = %s
+                """
     
     GET_PREFERENZA = "select preferenza_sessione from credenziali where email = %s"
 

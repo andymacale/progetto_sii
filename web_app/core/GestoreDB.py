@@ -205,14 +205,42 @@ class GestoreDB:
             if connessione:
                 connessione.close()
 
+    def get_elenco_pazienti(self, email: str):
+        """Restituisce l'elenco dei pazienti per data di ultima visita"""
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(QuerySQL.VISUALIZZA_PAZIENTI, (email,))
+            pazienti = cursore.fetchall()
+            risultati = []
+            for paziente in pazienti:
+                risultati.append({
+                    "id": paziente[0],
+                    "codice fiscale": paziente[1],
+                    "nome": paziente[2],
+                    "cognome": paziente[3],
+                    "ultima visita": paziente[4]
+                })
+            return risultati
+        except Exception as e: 
+            print(f"Errore visualizzazione dei pazienti: {e}")
+            return 0
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione:
+                connessione.close()
+
     def inserisci_paziente(self, paziente: Paziente):
         valori = (
             paziente.nome,
             paziente.cognome,
             paziente.codice_fiscale,
             paziente.data_di_nascita,
-            paziente.peso,
+            paziente.altezza,
             paziente.sesso,
+            paziente.bcpo,
+            paziente.storia_oncologica,
             paziente.medico.credenziali.email
         )
         try:
@@ -228,9 +256,39 @@ class GestoreDB:
             print(f"Errore di integrita': {e}")
             return False
         except Exception as e:
+            print(f"Errore generico: {e}")
             if connessione:
                 connessione.rollback()
             return False
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione: 
+                connessione.close()
+
+    def _get_paziente_by_id_and_medico(self, paziente_id: int, medico: Medico):
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor(cursor_factory=RealDictCursor)
+            email_medico = medico.credenziali.email
+            cursore.execute(QuerySQL.CHECK_PID, (paziente_id, email_medico))
+            riga = cursore.fetchone()            
+            if riga:
+                return Paziente(
+                        nome=riga['nome'],
+                        cognome=riga['cognome'],
+                        codice_fiscale=riga['codice_fiscale'],
+                        sesso=riga['sesso'],
+                        altezza=riga['altezza'],
+                        bcpo=riga['bcpo'],
+                        storia_oncologica=riga['storia_oncologica'],
+                        data_di_nascita=riga['data_di_nascita'],
+                        medico=medico
+                    )
+            return None
+        except Exception as e:
+            print(f"Errore nel recupero paziente: {e}")
+            return None
         finally:
             if cursore: 
                 cursore.close()

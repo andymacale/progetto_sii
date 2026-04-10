@@ -5,6 +5,7 @@ from costanti.parametri import CHIAVE
 import streamlit.components.v1 as components
 import time
 from costanti.Home import Home
+from datetime import datetime
 
 
 class GestoreUI:
@@ -20,6 +21,7 @@ class GestoreUI:
                 st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
         except FileNotFoundError as e:
             st.error("Errore nel caricamento del CSS")
+        
 
     @staticmethod
     def carica_icona(nome_file="icona.png"):
@@ -60,3 +62,4 @@ class GestoreUI:
         with open(path, "r", encoding=CHIAVE) as file_js:
             codice_js = file_js.read()
         components.html(f"<script>{codice_js}</script>",height=0)
+

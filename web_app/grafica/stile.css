@@ -1,119 +1,145 @@
+/* =========================================
+   1. RESET E STILE GENERALE (MEDICO)
+   ========================================= */
 .stApp {
     background-color: #ffffff;
     color: #2c3e50;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+h1, h2, h3 {
+    color: #1a2a3a;
+    font-weight: 700;
+}
+
+/* Rimuove il footer standard in fondo alla pagina */
+footer {
+    display: none !important;
+}
+
+/* =========================================
+   2. HEADER: HAMBURGER E REGOLE ANTI-DEPLOY
+   ========================================= */
+
+/* Nasconde il tasto Deploy e il menu a tre puntini di destra */
+.stDeployButton, 
+div[data-testid="stAppDeploy"], 
+button[data-testid="stAppDeploy"],
+#MainMenu, 
+header div[data-testid="stStatusWidget"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Pulizia dell'header: trasparente per non bloccare la vista */
+header[data-testid="stHeader"] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom: 1px solid #f0f2f6;
+}
+
+/* TRASFORMAZIONE FRECCETTA -> HAMBURGER (☰) */
+/* Nasconde l'icona SVG originale della freccia */
+button[data-testid="stBaseButton-headerNoSpacing"] svg,
+button[kind="headerNoSpacing"] svg {
+    display: none !important;
+}
+
+/* Inserisce le tre barrette al suo posto */
+button[data-testid="stBaseButton-headerNoSpacing"]::before,
+button[kind="headerNoSpacing"]::before {
+    content: "☰"; 
+    font-family: Arial, sans-serif;
+    font-size: 26px;
+    color: #0056b3; /* Blu Medico */
+    visibility: visible !important;
+    display: block;
+    line-height: 1;
+}
+
+/* =========================================
+   3. SIDEBAR (STILE CHAT / LISTA)
+   ========================================= */
 [data-testid="stSidebar"] {
     background-color: #f8f9fa;
     border-right: 1px solid #e9ecef;
 }
 
-button[kind="primary"] {
-    background-color: #0056b3 ;
-    color: white ;
-    border-radius: 8px ;
-    border: none ;
-    padding: 0.5rem 1rem ;
-    font-weight: 600 ;
-    transition: all 0.2s ease-in-out ;
+/* Bottoni di navigazione nella sidebar */
+.stSidebar .stButton > button {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    color: #444 !important;
+    text-align: left;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    transition: all 0.2s ease-in-out;
 }
 
-button[kind="primary"]:hover {
-    background-color: #004494 ;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1) ;
-    transform: translateY(-1px) ;
+.stSidebar .stButton > button:hover {
+    background-color: #e9ecef !important;
+    color: #000 !important;
 }
 
-button[kind="secondary"] {
-    border-radius: 8px ;
-    transition: all 0.2s ;
-}
-
-button[kind="secondary"]:hover {
-    color: #dc3545 ;
-    border-color: #dc3545 ;
-}
-
-input {
-    border-radius: 8px ;
-    border: 1px solid #dee2e6 ;
-}
-
-input:focus {
-    border-color: #0056b3 ;
-    box-shadow: 0 0 0 0.2rem rgba(0,86,179,0.25) ;
-}
-
-h1, h2, h3 {
-    color: #1a2a3a;
-    font-weight: 700 ;
-}
-
-div[data-testid="stNotification"] {
-    border-radius: 10px ;
-    border: none ;
+/* Stile per i bottoni "Selected" (quando usi type="primary" nella sidebar) */
+.stSidebar .stButton > button[kind="primary"] {
+    background-color: #ffffff !important;
+    color: #0056b3 !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* =========================================
-   SPINNER GRAFICO MEDVISION
+   4. COMPONENTI UI (INPUT E BOTTONI)
    ========================================= */
+button[kind="primary"] {
+    background-color: #0056b3 !important;
+    color: white !important;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    border: none;
+}
 
+button[kind="primary"]:hover {
+    background-color: #004494 !important;
+    transform: translateY(-1px);
+}
+
+input {
+    border-radius: 8px !important;
+}
+
+/* =========================================
+   5. SPINNER PERSONALIZZATO
+   ========================================= */
 .med-spinner-box {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     padding: 20px;
-    margin: 10px 0;
-    background-color: #f8fcfd; /* Sfondo leggerissimo azzurro */
+    background-color: #f8fcfd;
     border-radius: 10px;
     border: 1px solid #e1eef5;
 }
 
 .med-spinner {
-    width: 45px;
-    height: 45px;
-    /* Crea un cerchio semi-trasparente... */
-    border: 5px solid rgba(0, 91, 150, 0.15); 
-    /* ...con un lato solido blu medico che gira! */
-    border-top-color: #005b96; 
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 91, 150, 0.1);
+    border-top-color: #005b96;
     border-radius: 50%;
-    animation: rotazione-medica 1s ease-in-out infinite;
+    animation: gira 1s linear infinite;
 }
 
-/* L'animazione che fa girare la rotella all'infinito */
-@keyframes rotazione-medica {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+@keyframes gira {
+    to { transform: rotate(360deg); }
 }
 
 .med-spinner-testo {
-    margin-top: 15px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 10px;
     font-weight: 600;
     color: #005b96;
-    letter-spacing: 0.5px;
-    animation: lampeggio-testo 1.5s infinite;
-}
-
-/* Un leggero effetto di dissolvenza sul testo per indicare il "caricamento" */
-@keyframes lampeggio-testo {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-/* Nasconde l'header superiore di Streamlit (Menu, Deploy, barra colorata) */
-[data-testid="stHeader"] {
-    display: none;
-}
-
-/* Opzionale: Rimuove lo spazio vuoto in alto lasciato dall'header */
-.block-container {
-    padding-top: 2rem;
-}
-
-/* Opzionale ma consigliato: Nasconde il footer "Made with Streamlit" a fondo pagina */
-footer {
-    display: none;
 }

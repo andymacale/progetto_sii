@@ -12,13 +12,15 @@ from datetime import datetime
 st.set_page_config(
     page_title="Medical", 
     page_icon=GestoreUI.carica_icona(),
-    layout="centered"
+    layout="centered",
 )
+
 
 GestoreUI.carica_css()
 
 if 'db' not in st.session_state:
     st.session_state.db = GestoreDB()
+
 
 local_storage = LocalStorage()
 
@@ -50,7 +52,6 @@ if not st.session_state.get('utente_loggato', False):
             if scadenza is None or datetime.now() < scadenza:
                 st.session_state.utente_loggato = True
                 st.session_state.dati_utente = medico
-                st.rerun()
             else:
                 st.session_state.db.elimina_token_sessione(medico.credenziali.email)
                 st.session_state.comando_elimina_token = True
@@ -64,5 +65,6 @@ if not st.session_state.get('utente_loggato', False):
     portale.db = st.session_state.db 
     portale.homepage()
 else:
-    area_medica = Medical(st.session_state.db)
-    area_medica.homepage()
+    if 'area_medica_istanza' not in st.session_state:
+        st.session_state.area_medica_istanza = Medical(st.session_state.db)
+    st.session_state.area_medica_istanza.main_render()
