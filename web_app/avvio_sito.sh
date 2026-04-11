@@ -4,14 +4,14 @@
 DIR_SITO=$(cd "$(dirname "$0")" && pwd)
 PATH_PROGETTO=$(cd "$DIR_SITO/.." && pwd)
 
-echo "🚀 AVVIO MANUALE (Debug Mode)"
-echo "📍 Progetto: $PATH_PROGETTO"
-echo "📂 Cartella App: $DIR_SITO"
-echo "📄 File .env: $DIR_SITO/.env"
+echo "AVVIO SITO"
+echo "Progetto: $PATH_PROGETTO"
+echo "Cartella App: $DIR_SITO"
+echo "File .env: $DIR_SITO/.env"
 
 # 2. Controllo esistenza file critici
 if [ ! -f "$DIR_SITO/.env" ]; then
-    echo "❌ ERRORE: Il file .env non esiste in $DIR_SITO"
+    echo "ERRORE: Il file .env non esiste in $DIR_SITO"
     exit 1
 fi
 
@@ -20,6 +20,7 @@ sudo docker run --gpus all -it --rm \
     --name tesi_sito \
     --ipc=host \
     --network=host \
+    -e TZ=Europe/Rome \
     --env-file "$DIR_SITO/.env" \
     -v "$PATH_PROGETTO:/workspace" \
     -v "$HOME/.cache/pip_docker:/root/.cache/pip" \

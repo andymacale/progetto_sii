@@ -62,7 +62,8 @@ class QuerySQL:
            """
 
     ANALISI_PAZIENTE = """
-                        create temporary table if not exists temp_analisi_paziente as
+                        drop table if exists temp_analisi_paziente;
+                        create temporary table temp_analisi_paziente as
                         select v.data_visita,
                                v.tipo,
                                vc.emoglobina,
@@ -82,6 +83,24 @@ class QuerySQL:
                         join pazienti p on v.paziente_id = p.id
                         where p.codice_fiscale = %s
                        """
+
+    VISUALIZZA_VISITE = """
+                            select  data_visita,
+                                    tipo,
+                                    emoglobina,
+                                    leucociti,
+                                    piastrine,
+                                    creatinina,
+                                    glicemia,
+                                    saturazione_spo2,
+                                    ldh,
+                                    albumia,
+                                    peso,
+                                    altezza,
+                                    bcpo,
+                                    storia_oncologica
+                            from temp_analisi_paziente
+                        """
 
     CHECK_PID = """
                     select p.*

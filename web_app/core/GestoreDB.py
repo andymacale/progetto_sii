@@ -295,6 +295,34 @@ class GestoreDB:
             if connessione: 
                 connessione.close()
 
+    def get_analisi_paziente(self, cursore_attivo):
+        """Restituisce le visite effettuate da quel paziente"""
+        try:
+            cursore_attivo.execute(QuerySQL.VISUALIZZA_VISITE)
+            analisi = cursore_attivo.fetchall()
+            risultati = []
+            for ris in analisi:
+                risultati.append({
+                    "data visita": ris[0],
+                    "tipo": ris[1],
+                    "emoglobina": ris[2],
+                    "leucociti": ris[3],
+                    "piastrine": ris[4],
+                    "creatinina": ris[5],
+                    "glicemia": ris[6],
+                    "saturazione spo2": ris[7],
+                    "ldh": ris[8],
+                    "albumia": ris[9],
+                    "peso": ris[10],
+                    "altezza": ris[11],
+                    "bcpo": ris[12],
+                    "storia oncologica": ris[13]
+                })
+            return risultati
+        except Exception as e: 
+            print(f"Errore visualizzazione delle visite: {e}")
+            return 0
+
     def get_preferenza_sessione(self, email):
         connessione = None
         cursore = None

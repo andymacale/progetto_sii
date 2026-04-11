@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 import math
 from core.DBSessionManager import DBSessionManager
-#from streamlit_local_storage import LocalStorage
 
 
 
@@ -54,7 +53,7 @@ class Medical:
             st.divider()
             
             # Navigazione rapida per forzare il reset
-            if st.button("Home", use_container_width=True):
+            if st.button("Home", type="primary", use_container_width=True):
                 st.session_state.pagina_attiva = 'dashboard'
                 st.session_state.step_analisi = False
                 st.query_params.clear()
@@ -118,14 +117,10 @@ class Medical:
                 self._modalita_nuovo_paziente()
 
         st.divider()
-
+        st.subheader("Elenco pazienti")
         if numero_pazienti == 0:
-            st.info("**Benvenuto nel tuo pannello di controllo.**")
-            st.write("""
-            Non risultano pazienti registrati a tuo nome. 
-            Inizia aggiungendo il tuo primo paziente premendo il tasto **'Aggiungi nuovo paziente'** in alto.
-            """)
-            st.caption("Una volta aggiunto, potrai visualizzare qui lo storico delle tue attività.")
+            st.write("👤")
+            st.caption("Nessuna paziente registrato")
         else:
             pazienti = self.db.get_elenco_pazienti(self.email)
             df = pd.DataFrame(pazienti)
@@ -155,7 +150,6 @@ class Medical:
                             paziente_obj = self.db._get_paziente_by_id_and_medico(id_paziente, self.utente_corrente)
                             if paziente_obj:
                                 self._seleziona_paziente(paziente_obj)
-            st.subheader("Elenco pazienti")
             st.data_editor(
                 df_stampa,
                 column_config = {
@@ -163,7 +157,7 @@ class Medical:
                     "Apri": st.column_config.CheckboxColumn("Seleziona", default=False),
                     "codice fiscale": st.column_config.TextColumn("Codice Fiscale", disabled=True),
                     "nome": st.column_config.TextColumn("Nome", disabled=True),
-                    "cognome": st.column_config.TextColumn("cognome", disabled=True),
+                    "cognome": st.column_config.TextColumn("Cognome", disabled=True),
                     "ultima visita": st.column_config.DateColumn(
                         "Ultima Visita",
                         format="DD/MM/YYYY",
@@ -185,8 +179,128 @@ class Medical:
     
     def _dettaglio_paziente(self):
         st.divider()
-        st.title(f"Cartella Clinica: {self.paziente_corrente.nome} {self.paziente_corrente.cognome}")
-        st.warning("Work in progress!")
+        st.subheader(f"Cartella Clinica: {self.paziente_corrente.nome} {self.paziente_corrente.cognome}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Codice fiscale**: {self.paziente_corrente.codice_fiscale}")
+            if self.paziente_corrente.sesso == 'F':
+                st.write(f"**Sesso**: Femminile")
+            else:
+                st.write(f"**Sesso**: Maschile")
+        with col2:
+            st.write(f"**Data di nascita**: {self.paziente_corrente.data_di_nascita.strftime('%d/%m/%Y')}")
+            st.write(f"**Altezza**: {self.paziente_corrente.altezza} cm")
+        if self.paziente_corrente.bcpo:
+            st.warning(f"Paziente affetto da Broncopneumopatia Cronica Ostuttiva")
+        if self.paziente_corrente.storia_oncologica:
+            st.write(f"Precedenti oncologici registrati")
+        st.divider()
+        col_azione_1, col_azione_2 = st.columns(2)
+        with col_azione_1:
+            if st.button("Inserisci Nuova Analisi", use_container_width=True, type="primary"):
+                self._modalita_nuova_analisi()
+        with col_azione_2:
+            if st.button("Avvia Analisi con l'IA", use_container_width=True, type="primary"):
+                self._modalita_nuova_analisi()
+        st.divider()
+        st.markdown("<br>", unsafe_allow_html=True)
+        if "cursore_storico" in st.session_state:
+            visite = self.db.get_analisi_paziente(st.session_state.cursore_storico)
+            df = pd.DataFrame(visite)
+            st.subheader("Elenco visite")
+            if df.empty:
+                st.write("📂")
+                st.caption("Nessuna visita registrata")
+            else:
+                st.data_editor(
+                    df,
+                    column_config = {
+                        "data visita": st.column_config.DatetimeColumn(
+                            "Ultima Visita",
+                            format="DD/MM/YYYY HH:mm",
+                            help="Data dell'ultimo incontro registrato",
+                            disabled=True
+                        ),
+                        "tipo": st.column_config.TextColumn("Tipo", disabled=True),
+                        "emoglobina": st.column_config.NumberColumn("Emoglobina", disabled=True),
+                        "leucociti": st.column_config.NumberColumn("Leucociti", disabled=True),
+                        "piastrine": st.column_config.NumberColumn("Piastrine", disabled=True),
+                        "creatinina": st.column_config.NumberColumn("Creatinina", disabled=True),
+                        "saturazione spo2": st.column_config.NumberColumn("SPO2", disabled=True),
+                        "ldh": st.column_config.NumberColumn("LDH", disabled=True),
+                        "albumia": st.column_config.NumberColumn("Albumia", disabled=True),
+                        "peso": st.column_config.NumberColumn("Peso", format="%.1f", disabled=True),
+                        "altezza": st.column_config.NumberColumn("Altezza", disabled=True),
+                        "bcpo": st.column_config.CheckboxColumn(
+                                                                "BCPO",
+                                                                help="Paziente affetto da Broncopneumopatia Cronica Ostuttiva", 
+                                                                disabled=True),
+                        "storia oncologica": st.column_config.CheckboxColumn(
+                                                                             "Storia oncologica",
+                                                                             help="Precedenti oncologici registrati",
+                                                                             disabled=True)
+                        },
+                    hide_index=True,
+                    width='stretch',
+                    key="tabella_visite"
+                )
+
+    @st.dialog("Inserisci Nuova Analisi")
+    def _modalita_nuova_analisi(self):
+        st.write(f"Paziente {self.paziente_corrente.codice_fiscale}")
+        st.caption("I campi contrassegnati con $^*$ sono obbligatori")
+        col1, col2 = st.columns(2)
+        with col1:
+            data_visita = st.date_input("Data Visita $^*$", value=datetime.now().date(), format="DD/MM/YYYY")
+        with col2:
+            ora_visita = st.time_input("Ora Visita $^*$", value=datetime.now().time())
+            
+        tipo_visita = st.selectbox("Tipo di Visita $^*$", ["Controllo di routine", "Visita specialistica", "Esami del sangue", "Urgenza"])
+        peso = st.number_input("Peso (kg) *", min_value=1.0, max_value=300.0, value=None, step=0.1)
+        
+        if not peso:
+            st.error("Peso è un campo obbligatorio!")
+            return
+        st.divider()
+              
+        emoglobina = st.number_input("Emoglobina (g/dL)", min_value=0.0, value=None, step=0.1)
+        creatinina = st.number_input("Creatinina (mg/dL)", min_value=0.0, value=None, step=0.01)
+        leucociti = st.number_input("Leucociti (mila/µL)", min_value=0.0, value=None, step=0.1)
+        piastrine = st.number_input("Piastrine (mila/µL)", min_value=0, value=None, step=1)
+        glicemia = st.number_input("Glicemia (mg/dL)", min_value=0, value=None, step=1)
+        saturazione = st.number_input("SpO2 (%)", min_value=0, max_value=100, value=None, step=1)
+        ldh = st.number_input("LDH (U/L)", min_value=0, value=None, step=1)
+        albumina = st.number_input("Albumina (g/dL)", min_value=0.0, value=None, step=0.1)
+        
+        if st.button("Salva Analisi", type="primary", use_container_width=True):
+            nuovo = ValutazioneClinica(
+                    paziente=self.paziente_corrente,
+                    medico=self.utente_corrente,
+                    data_visita = datetime.combine(data_visita, ora_visita),
+                    tipo=tipo_visita,
+                    peso=peso,
+                    emoglobina=emoglobina,
+                    leucociti=leucociti,
+                    piastrine=piastrine,
+                    creatinina=creatinina,
+                    glicemia=glicemia,
+                    saturazione=saturazione,
+                    ldh=ldh,
+                    albumina=albumina
+                    )
+            
+            with GestoreUI.spinner_medico("Salvataggio dell'analisi nel database ..."):
+                time.sleep(1)
+                successo = self.db.inserisci_paziente(nuovo)
+                
+            if successo:
+                st.success("Analisi salvata con successo!")
+                time.sleep(1)
+                self._reset_selezione_paziente()
+                st.rerun()
+            else:
+                st.error("Errore nel salvataggio dell'analisi!")
+
 
     def _reset_selezione_paziente(self):
         DBSessionManager.chiudi_sessione()
@@ -356,7 +470,6 @@ class Medical:
                              medico=self.utente_corrente)
             
             with GestoreUI.spinner_medico("Salvataggio del paziente nel database ..."):
-                import time
                 time.sleep(1)
                 successo = self.db.inserisci_paziente(nuovo)
                 
@@ -368,36 +481,3 @@ class Medical:
                 st.rerun()
             else:
                 st.error("Errore nel salvataggio del paziente!")
-
-    def _render_modulo_analisi(self):
-        """Metodo per la gestione delle analisi cliniche"""
-        st.title("Nuova Analisi Clinica")
-        
-        # Recupero pazienti per il menu a tendina
-        pazienti = self.db.get_pazienti_medico(self.email)
-        
-        if not pazienti:
-            st.warning("Nessun paziente trovato. Aggiungine uno dalla Home.")
-            return
-
-        nomi_pazienti = {f"{p['cognome']} {p['nome']}": p for p in pazienti}
-        scelta = st.selectbox("Seleziona paziente:", ["-"] + list(nomi_pazienti.keys()))
-
-        if scelta != "-":
-            paziente = nomi_pazienti[scelta]
-            st.session_state.paziente_selezionato = paziente
-            st.subheader(f"Inserimento dati per: {scelta}")
-            
-            # Qui andrà il tuo st.data_editor per i dati ematochimici
-            st.info("Tabella temporanea in attesa di configurazione...")
-
-    # Funzione simulata di analisi (Main Page)
-    def _pagina_principale_analisi(self):
-        st.header("Analisi in Corso...")
-        st.write("Dati ricevuti dalla sidebar:")
-        # Recuperiamo i dati dalla memoria
-        dati = st.session_state['dati_paziente']
-        st.info(f"Paziente: {dati['sesso']}, {dati['eta']} anni. Vista: {dati['posizione']}")
-        st.success("Ciao! I dati sono arrivati nel backend.")
-
-

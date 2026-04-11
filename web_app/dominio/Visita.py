@@ -12,9 +12,8 @@ class Visita(ABC):
                 medico: Medico, 
                 data_visita: datetime, 
                 tipo: str,
-                id: Optional[int] = None):
+                ):
 
-        self.id = id
         self.paziente = paziente
         self.medico = medico
         self.data_visita = data_visita if data_visita is not None else datetime.now()
