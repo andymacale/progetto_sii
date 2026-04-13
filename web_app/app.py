@@ -12,7 +12,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="Medical", 
     page_icon=GestoreUI.carica_icona(),
-    layout="centered",
+    layout="wide",
 )
 
 

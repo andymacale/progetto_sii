@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 import math
 from core.DBSessionManager import DBSessionManager
+from dominio.ValutazioneClinica import ValutazioneClinica
+from dominio.Visita import Visita
 
 
 
@@ -200,8 +202,8 @@ class Medical:
             if st.button("Inserisci Nuova Analisi", use_container_width=True, type="primary"):
                 self._modalita_nuova_analisi()
         with col_azione_2:
-            if st.button("Avvia Analisi con l'IA", use_container_width=True, type="primary"):
-                self._modalita_nuova_analisi()
+            if st.button("Processa Analisi", use_container_width=True, type="primary"):
+                self._modalita_processa_analisi()
         st.divider()
         st.markdown("<br>", unsafe_allow_html=True)
         if "cursore_storico" in st.session_state:
@@ -291,7 +293,7 @@ class Medical:
             
             with GestoreUI.spinner_medico("Salvataggio dell'analisi nel database ..."):
                 time.sleep(1)
-                successo = self.db.inserisci_paziente(nuovo)
+                successo = self.db.inserisci_visita(nuovo)
                 
             if successo:
                 st.success("Analisi salvata con successo!")
@@ -300,6 +302,10 @@ class Medical:
                 st.rerun()
             else:
                 st.error("Errore nel salvataggio dell'analisi!")
+
+    @st.dialog("Processa Analisi")
+    def _modalita_processa_analisi(self):
+        st.warning("Work in progress!")
 
 
     def _reset_selezione_paziente(self):
@@ -387,7 +393,7 @@ class Medical:
         st.title("Inserimento dati paziente")
 
         nome = st.text_input("Nome").strip()
-        cognome = st.text_input("cognome").strip()
+        cognome = st.text_input("Cognome").strip()
 
         if not nome or not cognome:
             st.info("Tutti i campi sono obbligatori")

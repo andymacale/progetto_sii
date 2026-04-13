@@ -9,6 +9,9 @@ from dotenv import load_dotenv, find_dotenv
 from costanti.parametri import CHIAVE
 from dominio.Paziente import Paziente
 from costanti.QuerySQL import QuerySQL
+from dominio.Visita import Visita
+from dominio.ValutazioneClinica import ValutazioneClinica
+
 
 class GestoreDB:
     
@@ -322,6 +325,38 @@ class GestoreDB:
         except Exception as e: 
             print(f"Errore visualizzazione delle visite: {e}")
             return 0
+
+    def inserisci_visita(self, visita: ValutazioneClinica):
+        try:
+            connessione = self._get_connessione()
+            cursore = connessione.cursor()
+            cursore.execute(QuerySQL.INSERISCI_VISITA, (visita.data_visita,
+                                                        visita.tipo,
+                                                        visita.paziente.codice_fiscale,
+                                                        visita.medico.credenziali.email,
+                                                        visita.emoglobina,
+                                                        visita.leucociti,
+                                                        visita.piastrine,
+                                                        visita.creatinina,
+                                                        visita.glicemia,
+                                                        visita.saturazione,
+                                                        visita.ldh,
+                                                        visita.albumina,
+                                                        visita.peso))
+            connessione.commit()
+            print(f"Visita inserita con successo!")
+            return True
+        except Exception as e: 
+            print(f"Errore generico: {e}")
+            if connessione:
+                connessione.rollback()
+            return False
+        finally:
+            if cursore: 
+                cursore.close()
+            if connessione:
+                connessione.close()
+
 
     def get_preferenza_sessione(self, email):
         connessione = None

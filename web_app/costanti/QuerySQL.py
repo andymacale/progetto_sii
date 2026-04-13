@@ -102,6 +102,37 @@ class QuerySQL:
                             from temp_analisi_paziente
                         """
 
+    INSERISCI_VISITA = """
+                            with nuova_visita as (
+                            insert into visite(data_visita, tipo, paziente_id, medico_id)
+                            values (%s, %s, 
+                            (select id from pazienti where codice_fiscale = %s),
+                            (select m.id from medici m
+                            join credenziali c on c.id = m.credenziali_id
+                            where c.email = %s)) 
+                            returning id)
+                            insert into visite_cliniche(visita_id, 
+                                                        emoglobina, 
+                                                        leucociti, 
+                                                        piastrine, 
+                                                        creatinina, 
+                                                        glicemia, 
+                                                        saturazione_spo2, 
+                                                        ldh, 
+                                                        albumia,
+                                                        peso)
+                            values ((select id from nuova_visita),
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s,
+                                    %s)
+                       """
+
     CHECK_PID = """
                     select p.*
                     from pazienti p

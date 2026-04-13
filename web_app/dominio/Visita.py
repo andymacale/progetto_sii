@@ -16,6 +16,7 @@ class Visita(ABC):
 
         self.paziente = paziente
         self.medico = medico
+        self.tipo = tipo
         self.data_visita = data_visita if data_visita is not None else datetime.now()
         
     @abstractmethod

@@ -1,6 +1,8 @@
 from typing import Optional
 from dominio.Medico import Medico
 from dominio.Paziente import Paziente
+from dominio.Visita import Visita
+from datetime import datetime
 
 class ValutazioneClinica(Visita):
 
@@ -10,7 +12,6 @@ class ValutazioneClinica(Visita):
                  data_visita: datetime, 
                  tipo: str,
                  peso: float,
-                 id: Optional[int] = None,
                  emoglobina: Optional[float] = None,
                  leucociti: Optional[float] = None,
                  piastrine: Optional[float] = None,
@@ -21,7 +22,7 @@ class ValutazioneClinica(Visita):
                  albumina: Optional[float] = None
                  ):
         
-        super().__init__(paziente=paziente, medico=medico, data_visita=date, id=id)
+        super().__init__(paziente=paziente, medico=medico, data_visita=data_visita, tipo=tipo)
         self.peso = peso
         self.emoglobina = emoglobina
         self.leucociti = leucociti
