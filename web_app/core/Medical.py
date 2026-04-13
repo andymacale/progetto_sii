@@ -15,6 +15,11 @@ import math
 from core.DBSessionManager import DBSessionManager
 from dominio.ValutazioneClinica import ValutazioneClinica
 from dominio.Visita import Visita
+from core.MotoreIA import MotoreIA
+import uuid
+import tempfile
+import os
+import subprocess
 
 
 
@@ -99,6 +104,8 @@ class Medical:
 
         if pagina == 'dettaglio_paziente' and self.paziente_corrente:
             self._dettaglio_paziente()
+        elif pagina == 'risultato_ia' and self.paziente_corrente:
+            self._render_pagina_risultato_ia()
         else:
             st.query_params.clear()
             st.session_state.pagina_attiva = 'dashboard'
@@ -197,23 +204,28 @@ class Medical:
         if self.paziente_corrente.storia_oncologica:
             st.write(f"Precedenti oncologici registrati")
         st.divider()
+        visite = self.db.get_analisi_paziente(cursore_attivo=st.session_state.cursore_storico, 
+                                                  paziente=self.paziente_corrente, 
+                                                  medico=self.utente_corrente) 
         col_azione_1, col_azione_2 = st.columns(2)
         with col_azione_1:
             if st.button("Inserisci Nuova Analisi", use_container_width=True, type="primary"):
                 self._modalita_nuova_analisi()
         with col_azione_2:
-            if st.button("Processa Analisi", use_container_width=True, type="primary"):
-                self._modalita_processa_analisi()
+            if visite:
+                if st.button("Processa Analisi", use_container_width=True, type="primary"):
+                    self._modalita_processa_analisi()
+            else:
+                st.button("Processa Analisi", use_container_width=True, type="primary", disabled=True)
         st.divider()
         st.markdown("<br>", unsafe_allow_html=True)
         if "cursore_storico" in st.session_state:
-            visite = self.db.get_analisi_paziente(st.session_state.cursore_storico)
-            df = pd.DataFrame(visite)
             st.subheader("Elenco visite")
-            if df.empty:
+            if not visite:
                 st.write("📂")
                 st.caption("Nessuna visita registrata")
             else:
+                df = self._visite_to_dataframe_ui(visite)
                 st.data_editor(
                     df,
                     column_config = {
@@ -303,10 +315,149 @@ class Medical:
             else:
                 st.error("Errore nel salvataggio dell'analisi!")
 
-    @st.dialog("Processa Analisi")
-    def _modalita_processa_analisi(self):
-        st.warning("Work in progress!")
+    def _visite_to_dataframe_ui(self, lista_visite):
+        """Metodo di servizio solo per l'estetica della UI"""
+        dati = []
+        for v in lista_visite:
+            dati.append({
+                "Ultima Visita": v.data_visita.strftime('%d/%m/%Y %H:%M'),
+                "Tipo": v.tipo,
+                "Emoglobina": v.emoglobina,
+                "Leucociti": v.leucociti,
+                "Piastrine": v.piastrine,
+                "Creatinina": v.creatinina,
+                "Glicemia": v.glicemia,
+                "SPO2": v.saturazione,
+                "LDH": v.ldh,
+                "Albumina": v.albumina,
+                "Peso": v.peso
+            })
+        return pd.DataFrame(dati)
 
+    def _modalita_processa_analisi(self):
+        config, modello, scaler = MotoreIA.carica_risorse()
+        visite_paziente = self.db.get_analisi_paziente(paziente=self.paziente_corrente, 
+                                                       medico=self.utente_corrente,
+                                                       cursore_attivo=st.session_state.cursore_storico,
+                                                       ordinamento="asc")
+        
+        with st.spinner("L'IA sta elaborando i dati temporali..."):
+            t_seq, t_len, t_stat = MotoreIA.prepara_dati(visite_paziente, self.paziente_corrente, scaler, config)
+            probabilita = MotoreIA.esegui_inferenza(modello, t_seq, t_len, t_stat)
+            
+            st.session_state.risultato_ia = {
+                "prob": probabilita,
+                "t_seq": t_seq,
+                "t_len": t_len,
+                "t_stat": t_stat,
+                "modello": modello 
+            }
+            
+            st.session_state.pagina_attiva = 'risultato_ia'
+            st.rerun()
+
+
+    def _render_pagina_risultato_ia(self):
+        # Recupero dati dalla sessione
+        res = st.session_state.get("risultato_ia")
+        if not res:
+            st.session_state.pagina_attiva = 'dettaglio_paziente'
+            st.rerun()
+
+        prob = res["prob"]
+        
+        if st.button("Torna alla Cartella Clinica"):
+            st.session_state.pagina_attiva = 'dettaglio_paziente'
+            st.rerun()
+
+        st.title("Report Analisi Predittiva")
+        st.caption(f"Paziente: {self.paziente_corrente.nome} {self.paziente_corrente.cognome} | CF: {self.paziente_corrente.codice_fiscale}")
+        
+        if prob > 0.70:
+            colore, esito, nota = "red", "POSITIVO", "Rischio critico rilevato."
+        elif 0.40 < prob <= 0.70:
+            colore, esito, nota = "orange", "A RISCHIO", "Monitoraggio consigliato."
+        else:
+            colore, esito, nota = "green", "NEGATIVO", "Parametri stabili."
+
+        st.markdown(f"""
+            <div style="background-color: {colore}; padding: 30px; border-radius: 15px; text-align: center; color: white;">
+                <h1 style="margin:0; font-size: 50px;">{esito}</h1>
+                <h3 style="margin:0; opacity: 0.8;">Probabilità di rischio: {prob*100:.1f}%</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.divider()
+        st.subheader("Interpretazione dei parametri")
+        temporal_cols = ['Emoglobina', 'Leucociti', 'Piastrine', 'Creatinina', 'Glicemia', 'BMI']
+        fig = MotoreIA.calcola_shap_grafico(res["modello"], res["t_seq"], res["t_len"], res["t_stat"], feature_names=temporal_cols)
+        if fig: st.pyplot(fig, width='content')
+        st.divider()
+        #st.button("Salva risultati", use_container_width=True, type="primary"):
+        with GestoreUI.spinner_medico("Elaborazione dati e compilazione referto firmato..."):
+            time.sleep(1.5)
+            pdf_bytes = self._genera_pdf_latex(esito, prob, nota)
+            if pdf_bytes:
+                ora_attuale = datetime.now()
+                timestamp_file = ora_attuale.strftime("%d-%m-%Y_%H-%M")
+                st.download_button(
+                                    label="Salva risultati",
+                                    data=pdf_bytes,
+                                    file_name=f"Referto_{self.paziente_corrente.codice_fiscale}_{timestamp_file}.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True,
+                                    type="primary")
+            else:
+                st.error("Errore nella generazione del file PDF")
+    
+            
+    def _genera_pdf_latex(self, esito, prob, nota):
+        with open("referto_template.tex", "r", encoding=CHIAVE) as f:
+            template = f.read()
+
+        nome_completo = f"{self.paziente_corrente.nome} {self.paziente_corrente.cognome}".replace("_", r"\_")
+        
+        mappa_colori = {"POSITIVO": "medred", "A RISCHIO": "medorange", "NEGATIVO": "medgreen"}
+        colore_latex = mappa_colori.get(esito, "black")
+
+        mappa_valori = {
+            "{{NOME_COGNOME}}": nome_completo,
+            "{{CODICE_FISCALE}}": self.paziente_corrente.codice_fiscale,
+            "{{DATA_NASCITA}}": self.paziente_corrente.data_di_nascita.strftime('%d/%m/%Y'),
+            "{{ALTEZZA}}": str(self.paziente_corrente.altezza),
+            "{{COLORE}}": colore_latex,
+            "{{ESITO}}": esito,
+            "{{PROBABILITA}}": f"{prob*100:.1f}",
+            "{{NOTA_CLINICA}}": nota,
+            "{{UUID}}": str(uuid.uuid4())[:8].upper(),
+            "{{COGNOME_MEDICO}}": self.utente_corrente.cognome
+        }
+
+        testo_finale = template
+        for placeholder, valore in mappa_valori.items():
+            testo_finale = testo_finale.replace(placeholder, valore)
+
+        # 4. Compilazione in cartella temporanea
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path_tex = os.path.join(tmpdir, "referto_generato.tex")
+            with open(path_tex, "w", encoding="utf-8") as f:
+                f.write(testo_finale)
+            
+            try:
+                subprocess.run(
+                    ["pdflatex", "-interaction=nonstopmode", "referto_generato.tex"], 
+                    cwd=tmpdir, 
+                    stdout=subprocess.DEVNULL, 
+                    check=True
+                )
+                
+                path_pdf = os.path.join(tmpdir, "referto_generato.pdf")
+                with open(path_pdf, "rb") as f:
+                    return f.read() # Restituisce i byte pronti per il DB (bytea)
+            except Exception as e:
+                print(f"Errore pdflatex: {e}")
+                return None
+    
 
     def _reset_selezione_paziente(self):
         DBSessionManager.chiudi_sessione()

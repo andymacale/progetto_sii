@@ -95,11 +95,9 @@ class QuerySQL:
                                     saturazione_spo2,
                                     ldh,
                                     albumia,
-                                    peso,
-                                    altezza,
-                                    bcpo,
-                                    storia_oncologica
+                                    peso
                             from temp_analisi_paziente
+                            order by data_visita {} nulls last
                         """
 
     INSERISCI_VISITA = """
