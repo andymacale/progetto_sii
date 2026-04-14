@@ -1,4 +1,4 @@
-# Tecniche di Machine Learning e Computer Vision per l'analisi ed il suggerimento di follow-up clinici
+# Tecniche di Machine Learning per l'analisi di dati clinici
 
 Questo progetto di ricerca propone una pipeline avanzata di Deep Learning per l'automazione del processo diagnostico sui dati clinici.
 
