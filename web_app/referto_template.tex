@@ -1,73 +1,92 @@
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{geometry}
-\geometry{a4paper, margin=2cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{graphicx}
+\geometry{a4paper, margin=1.5cm, top=1cm, bottom=1cm}
 \usepackage{xcolor}
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
-\usepackage{titlesec}
 
-% Colori personalizzati per gli esiti
 \definecolor{medred}{RGB}{189, 32, 49}
 \definecolor{medgreen}{RGB}{46, 125, 50}
 \definecolor{medorange}{RGB}{245, 124, 0}
-
-\titleformat{\section}{\large\bfseries\color{darkgray}}{}{0em}{}[\titlerule]
+\definecolor{lightgray}{gray}{0.95}
 
 \begin{document}
 
-% Intestazione
 \begin{center}
-    {\huge \textbf{REFERTO CLINICO PREDITTIVO}} \\
-    \vspace{2mm}
-    {\large Sistema di Supporto Decisionale basato su AI (LSTM+MLP)} \\
-    \vspace{5mm}
-    \rule{\textwidth}{1pt}
+    {\large \textbf{REPORT DI ANALISI PREDITTIVA}} \\ 
+    \vspace{1mm}
+    \rule{\textwidth}{0.5pt} 
 \end{center}
 
-% Sezione Dati Paziente
-\section*{INFORMAZIONI PAZIENTE}
+\section*{DATI ANAGRAFICI} \vspace{-2mm}
 \begin{tabular}{ll}
-    \textbf{Nome e Cognome:} & {{NOME_COGNOME}} \\
-    \textbf{Codice Fiscale:} & {{CODICE_FISCALE}} \\
+    \textbf{Soggetto:} & {{NOME_COGNOME}} \\
+    \textbf{Identificativo:} & {{CODICE_FISCALE}} \\
     \textbf{Data di Nascita:} & {{DATA_NASCITA}} \\
-    \textbf{Altezza:} & {{ALTEZZA}} cm \\
+    \textbf{Data Report:} & {{DATA_OGGI}} \\
 \end{tabular}
 
-\vspace{1cm}
+\vspace{2mm}
 
-% Sezione Risultato IA
-\section*{VALUTAZIONE PREDITTIVA IA}
-\vspace{5mm}
+\section*{VALUTAZIONE TECNICA IA}
 \begin{center}
-    \begin{minipage}{0.8\textwidth}
-        \centering
-        \textit{L'analisi della sequenza temporale degli ultimi parametri clinici ha prodotto il seguente esito:} \\
-        \vspace{5mm}
-        {\Huge \textbf{\color{{{COLORE}}} {{ESITO}}}} \\
-        \vspace{3mm}
-        {\Large \textbf{Probabilità di Rischio: {{PROBABILITA}}\%}}
-    \end{minipage}
+    \setlength{\fboxsep}{10pt}
+    \fcolorbox{{{COLORE}}}{lightgray}{
+        \begin{minipage}{0.4\textwidth}
+            \centering
+            {\Large \textbf{ESITO:}} \\
+            \vspace{2mm}
+            {\Huge \textbf{\color{{{COLORE}}} {{ESITO}}}} \\
+            \vspace{3mm}
+            {\large Probabilità di Rischio: \textbf{{{PROBABILITA}}\%}}
+        \end{minipage}
+    }
 \end{center}
 
-\vspace{1cm}
+\vspace{2mm}
 
-% Sezione Note
-\section*{NOTE CLINICHE E SUGGERIMENTI}
+\begin{minipage}[t]{1.0\textwidth}
+    \section*{PARAMETRI RILEVATI (Ultima Visita del {{DATA_VISITA}})}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{center}
+        \begin{tabular}{|l|l|l|}
+            \hline
+            \textbf{Parametro Clinico} & \textbf{Valore} & \textbf{Unità di misura} \\
+            \hline
+            Emoglobina (Hb) & {{HB}} & g/dL \\
+            Leucociti (WBC) & {{WBC}} & k/$\mu$L \\
+            Creatinina & {{CREA}} & mg/dL \\
+            Saturazione ($SpO_{2}$) & {{SPO2}}\% & \% \\
+            Glicemia & {{GLI}} & mg/dL \\
+            Albumina & {{ALB}} & g/dL \\
+            LDH & {{LDH}} & U/L \\
+            BMI & {{BMI}} & kg/m$^{2}$ \\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{minipage}
+
+\vspace{2mm}
+
+\section*{INTERPRETAZIONE DEI PARAMETRI (SHAP)}
+\begin{center}
+    \includegraphics[width=0.5\textwidth]{shap_plot.png} \\
+\end{center}
+
+\section*{NOTE AGGIUNTIVE}
 {{NOTA_CLINICA}}
 
 \vfill
-
-% Sezione Integrità e Firma
-\rule{\textwidth}{0.5pt}
 \begin{flushright}
     \small
-    \textbf{Identificativo Univoco Referto:} {{UUID}} \\
-    \textbf{Data Generazione:} \today \\
+    \textbf{ID Univoco Referto:} {{UUID}} \\
     \textbf{Medico Responsabile:} Dott. {{COGNOME_MEDICO}} \\
-    \vspace{10mm}
-    \textit{Firma digitale apposta dal sistema}
+    \vspace{5mm}
+    \textit{Generato automaticamente dal sistema il \today}
 \end{flushright}
 
 \end{document}

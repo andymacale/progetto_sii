@@ -69,83 +69,82 @@ class MotoreIA:
             return None, None, None
 
     @staticmethod
-    def prepara_dati(visite: list, paziente: Paziente, scaler_seq, config):
-        """Trasforma gli oggetti con quelli compatibili con il modello IA"""
+    def prepara_dati(visite, paziente, scaler_unico, config):
         seq_dim = config.get("seq_input_size", 12)
-        stat_dim = config.get("static_input_size", 6)
         max_seq_len = config.get("sequence_length", 5)
 
         oggi = datetime.today()
-        data_di_nascita = paziente.data_di_nascita
-        eta_attuale = oggi.year - data_di_nascita.year
-        if (oggi.month, oggi.day) < (data_di_nascita.month, data_di_nascita.day):
+        eta_attuale = oggi.year - paziente.data_di_nascita.year
+        if (oggi.month, oggi.day) < (paziente.data_di_nascita.month, paziente.data_di_nascita.day):
             eta_attuale -= 1
+
+        valori_spo2 = [float(v.saturazione) for v in visite if v.saturazione]
+        valori_ldh = [float(v.ldh) for v in visite if v.ldh]
+        valori_alb = [float(v.albumina) for v in visite if v.albumina]
+
+        avg_spo2 = sum(valori_spo2)/len(valori_spo2) if valori_spo2 else 98.0
+        avg_ldh = sum(valori_ldh)/len(valori_ldh) if valori_ldh else 200.0
+        avg_alb = sum(valori_alb)/len(valori_alb) if valori_alb else 4.0
+
+        is_bpco = 1.0 if paziente.bcpo else 0.0
+        is_cancer = 1.0 if paziente.storia_oncologica else 0.0
+
+        temporal_cols = ['hemoglobin', 'wbc', 'platelets', 'creatinine', 'glucose', 'bmi']
+        clinical_cols = ['is_bpco', 'is_cancer_hist', 'avg_spo2', 'avg_ldh', 'avg_albumin']
+        colonne_mlp = clinical_cols + ['anchor_age']
         
-        valori_spo2 = [float(val.saturazione) for val in visite if val.saturazione and val.saturazione > 0]
-        valori_ldh = [float(val.ldh) for val in visite if val.ldh and val.ldh > 0]
-        valori_alb = [float(val.albumina) for val in visite if val.albumina and val.albumina > 0]
+        colonne_attese_scaler = scaler_unico.feature_names_in_
 
-        avg_spo2 = sum(valori_spo2) / float(len(valori_spo2)) if valori_spo2 else 98.0
-        avg_ldh = sum(valori_ldh) / float(len(valori_ldh)) if valori_ldh else 200.0
-        avg_alb =sum(valori_alb) / float(len(valori_alb)) if valori_alb else 4.0
-
-        dati_statici = [
-            1.0 if paziente.bcpo else 0.0,
-            1.0 if paziente.storia_oncologica else 0.0,
-            avg_spo2,
-            avg_ldh,
-            avg_alb,
-            float(eta_attuale)
-        ][:stat_dim] 
-
-        tensor_static = torch.tensor(dati_statici, dtype=torch.float32).unsqueeze(0)
-
-        dati_per_scaler = []
-        maschere_seq = []
-
+        sequenza_finale_lista = []
+        vettore_statico_mlp = []
+        
         for visita in visite:
-
             altezza_m = float(paziente.altezza / 100.0) if paziente.altezza and paziente.altezza > 0 else 1.75
             bmi = float(visita.peso) / (altezza_m ** 2) if visita.peso else 25.0
 
-            campi_clinici = [
-                    float(visita.emoglobina) if visita.emoglobina else 0.0,
-                    float(visita.leucociti) if visita.leucociti else 0.0,
-                    float(visita.piastrine) if visita.piastrine else 0.0,
-                    float(visita.creatinina) if visita.creatinina else 0.0,
-                    float(visita.glicemia) if visita.glicemia else 0.0,
-                    float(bmi)
-            ]
+            valori_paziente = {
+                'hemoglobin': float(visita.emoglobina) if visita.emoglobina else 0.0,
+                'wbc': float(visita.leucociti) if visita.leucociti else 0.0,
+                'platelets': float(visita.piastrine) if visita.piastrine else 0.0,
+                'creatinine': float(visita.creatinina) if visita.creatinina else 0.0,
+                'glucose': float(visita.glicemia) if visita.glicemia else 0.0,
+                'bmi': bmi,
+                'anchor_age': float(eta_attuale),
+                'avg_spo2': avg_spo2,
+                'avg_ldh': avg_ldh,
+                'avg_albumin': avg_alb,
+                'is_bpco': is_bpco,
+                'is_cancer_hist': is_cancer
+            }
 
-            maschere_riga = [1.0 if x > 0 else 0.0 for x in campi_clinici]
-            maschere_seq.append(maschere_riga)
+            riga_da_scalare = {col: valori_paziente[col] for col in colonne_attese_scaler if col in valori_paziente}
+            df_per_scaler = pd.DataFrame([riga_da_scalare], columns=colonne_attese_scaler)
+            
+            riga_scalata = scaler_unico.transform(df_per_scaler)[0]
 
-            riga_10_colonne = campi_clinici + dati_statici[:4]
-            dati_per_scaler.append(riga_10_colonne)
+            valori_scalati = dict(zip(colonne_attese_scaler, riga_scalata))
+            
+            def get_val(col):
+                return valori_scalati[col] if col in valori_scalati else valori_paziente[col]
 
-        dati_input_np = np.array(dati_per_scaler)
-        nomi_colonne_training = scaler_seq.feature_names_in_ 
-        df_per_scaler = pd.DataFrame(dati_input_np, columns=nomi_colonne_training)
+            vettore_temporale = [get_val(col) for col in temporal_cols]
+            maschere = [1.0 if valori_paziente[col] > 0 else 0.0 for col in temporal_cols]
+            sequenza_finale_lista.append(vettore_temporale + maschere)
 
-        dati_scalati_10 = scaler_seq.transform(df_per_scaler)
+            vettore_statico_mlp = [get_val(col) for col in colonne_mlp]
 
-        valori_temporali_scalati = dati_scalati_10[:, :6]
-        dati_finali_12 = np.hstack((valori_temporali_scalati, np.array(maschere_seq)))
-
-        
+        dati_finali_12 = np.array(sequenza_finale_lista)
         lunghezza_effettiva = min(len(dati_finali_12), max_seq_len)
         tensor_lengths = torch.tensor([lunghezza_effettiva], dtype=torch.int64)
 
         if len(dati_finali_12) < max_seq_len:
-            # Post-padding con zeri
             padding = np.zeros((max_seq_len - len(dati_finali_12), seq_dim))
             sequenza_finale = np.vstack((dati_finali_12, padding))
         else:
-            # Truncating (prendiamo le ultime N visite)
             sequenza_finale = dati_finali_12[-max_seq_len:]
-
-        # Tensore finale pronto per il modello
+            
         tensor_seq = torch.tensor(sequenza_finale, dtype=torch.float32).unsqueeze(0) 
+        tensor_static = torch.tensor(vettore_statico_mlp, dtype=torch.float32).unsqueeze(0)
 
         return tensor_seq, tensor_lengths, tensor_static
 

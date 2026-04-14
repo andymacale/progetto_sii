@@ -202,7 +202,7 @@ class Medical:
         if self.paziente_corrente.bcpo:
             st.warning(f"Paziente affetto da Broncopneumopatia Cronica Ostuttiva")
         if self.paziente_corrente.storia_oncologica:
-            st.write(f"Precedenti oncologici registrati")
+            st.warning(f"Precedenti oncologici registrati")
         st.divider()
         visite = self.db.get_analisi_paziente(cursore_attivo=st.session_state.cursore_storico, 
                                                   paziente=self.paziente_corrente, 
@@ -350,7 +350,8 @@ class Medical:
                 "t_seq": t_seq,
                 "t_len": t_len,
                 "t_stat": t_stat,
-                "modello": modello 
+                "modello": modello,
+                "visite": visite_paziente
             }
             
             st.session_state.pagina_attiva = 'risultato_ia'
@@ -393,10 +394,11 @@ class Medical:
         fig = MotoreIA.calcola_shap_grafico(res["modello"], res["t_seq"], res["t_len"], res["t_stat"], feature_names=temporal_cols)
         if fig: st.pyplot(fig, width='content')
         st.divider()
-        #st.button("Salva risultati", use_container_width=True, type="primary"):
         with GestoreUI.spinner_medico("Elaborazione dati e compilazione referto firmato..."):
             time.sleep(1.5)
-            pdf_bytes = self._genera_pdf_latex(esito, prob, nota)
+            visite = res["visite"]
+            ultima_visita = visite[-1]
+            pdf_bytes = self._genera_pdf_latex(esito, prob, nota, ultima_visita, fig)
             if pdf_bytes:
                 ora_attuale = datetime.now()
                 timestamp_file = ora_attuale.strftime("%d-%m-%Y_%H-%M")
@@ -411,51 +413,93 @@ class Medical:
                 st.error("Errore nella generazione del file PDF")
     
             
-    def _genera_pdf_latex(self, esito, prob, nota):
-        with open("referto_template.tex", "r", encoding=CHIAVE) as f:
-            template = f.read()
+    def _genera_pdf_latex(self, esito, prob, nota, ultima_visita, fig_shap):
+        # 1. Funzioni di utilità per la formattazione
+        def clean_tex(text):
+            if text is None: return ""
+            replacements = {
+                '&': r'\&', '%': r'\%', '$': r'\$', '#': r'\#',
+                '_': r'\_', '{': r'\{', '}': r'\}', '~': r'\textasciitilde{}',
+                '^': r'\textasciicircum{}',
+            }
+            t = str(text)
+            for char, rep in replacements.items():
+                t = t.replace(char, rep)
+            return t
 
-        nome_completo = f"{self.paziente_corrente.nome} {self.paziente_corrente.cognome}".replace("_", r"\_")
-        
+        def f_str(valore, decimali=1):
+            try:
+                if valore is None or str(valore).lower() == 'none': return "N/D"
+                return f"{float(valore):.{decimali}f}".replace(".", ",")
+            except (ValueError, TypeError):
+                return "N/D"
+
+        # 2. Caricamento Template
+        try:
+            with open("referto_template.tex", "r", encoding="utf-8") as f:
+                testo_finale = f.read()
+        except Exception as e:
+            print(f"Errore caricamento template: {e}")
+            return None
+
+        # 3. Calcolo parametri derivati e mappe
+        h_m = self.paziente_corrente.altezza / 100
+        peso = float(ultima_visita.peso) if ultima_visita.peso else 0
+        bmi_val = peso / (h_m**2) if h_m > 0 else 0
+
         mappa_colori = {"POSITIVO": "medred", "A RISCHIO": "medorange", "NEGATIVO": "medgreen"}
-        colore_latex = mappa_colori.get(esito, "black")
-
+        
+        # Assicurati che le chiavi {{ALB}} e {{LDH}} siano identiche nel .tex
         mappa_valori = {
-            "{{NOME_COGNOME}}": nome_completo,
-            "{{CODICE_FISCALE}}": self.paziente_corrente.codice_fiscale,
+            "{{NOME_COGNOME}}": clean_tex(f"{self.paziente_corrente.nome} {self.paziente_corrente.cognome}"),
+            "{{CODICE_FISCALE}}": clean_tex(self.paziente_corrente.codice_fiscale),
             "{{DATA_NASCITA}}": self.paziente_corrente.data_di_nascita.strftime('%d/%m/%Y'),
-            "{{ALTEZZA}}": str(self.paziente_corrente.altezza),
-            "{{COLORE}}": colore_latex,
+            "{{DATA_OGGI}}": datetime.now().strftime('%d/%m/%Y'),
+            "{{COLORE}}": mappa_colori.get(esito, "black"),
             "{{ESITO}}": esito,
-            "{{PROBABILITA}}": f"{prob*100:.1f}",
-            "{{NOTA_CLINICA}}": nota,
+            "{{PROBABILITA}}": f_str(prob * 100, 1),
+            "{{NOTA_CLINICA}}": clean_tex(nota),
             "{{UUID}}": str(uuid.uuid4())[:8].upper(),
-            "{{COGNOME_MEDICO}}": self.utente_corrente.cognome
+            "{{COGNOME_MEDICO}}": clean_tex(self.utente_corrente.cognome),
+            "{{DATA_VISITA}}": ultima_visita.data_visita.strftime('%d/%m/%Y %H:%M'),
+            "{{HB}}": f_str(ultima_visita.emoglobina, 1),
+            "{{WBC}}": f_str(ultima_visita.leucociti, 1),
+            "{{CREA}}": f_str(ultima_visita.creatinina, 2),
+            "{{SPO2}}": f_str(ultima_visita.saturazione, 0),
+            "{{GLI}}": f_str(ultima_visita.glicemia, 0),
+            "{{ALB}}": f_str(ultima_visita.albumina, 1), 
+            "{{LDH}}": f_str(ultima_visita.ldh, 0),
+            "{{BMI}}": f_str(bmi_val, 1)
         }
 
-        testo_finale = template
+        # 4. Sostituzione segnaposto
         for placeholder, valore in mappa_valori.items():
             testo_finale = testo_finale.replace(placeholder, valore)
 
-        # 4. Compilazione in cartella temporanea
+        # 5. Compilazione
         with tempfile.TemporaryDirectory() as tmpdir:
-            path_tex = os.path.join(tmpdir, "referto_generato.tex")
-            with open(path_tex, "w", encoding="utf-8") as f:
+            path_immagine = os.path.join(tmpdir, "shap_plot.png")
+            fig_shap.savefig(path_immagine, bbox_inches='tight', dpi=300)
+            path_tex = os.path.join(tmpdir, "referto.tex")
+            with open(path_tex, "w", encoding=CHIAVE) as f:
                 f.write(testo_finale)
             
             try:
                 subprocess.run(
-                    ["pdflatex", "-interaction=nonstopmode", "referto_generato.tex"], 
+                    ["pdflatex", "-interaction=nonstopmode", "referto.tex"], 
                     cwd=tmpdir, 
-                    stdout=subprocess.DEVNULL, 
-                    check=True
+                    capture_output=True, 
+                    text=True, 
                 )
-                
-                path_pdf = os.path.join(tmpdir, "referto_generato.pdf")
-                with open(path_pdf, "rb") as f:
-                    return f.read() # Restituisce i byte pronti per il DB (bytea)
+                with open(os.path.join(tmpdir, "referto.pdf"), "rb") as f:
+                    return f.read()
+            except subprocess.CalledProcessError as e:
+                print("--- ERRORE DI COMPILAZIONE LATEX ---")
+                print(e.stdout) # Qui leggerai l'errore esatto (es. "Missing package")
+                print(e.stderr)
+                return None
             except Exception as e:
-                print(f"Errore pdflatex: {e}")
+                print(f"Errore generico nel PDF: {e}")
                 return None
     
 
@@ -583,7 +627,7 @@ class Medical:
         st.divider()
         col4, col5 = st.columns(2)
         with col4:
-            sesso = st.toggle("sesso")
+            sesso = st.toggle("Sesso")
         if sesso:
             valore_sesso = "F"
         else:

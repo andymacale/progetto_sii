@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     texlive-latex-base \
     texlive-fonts-recommended \
     texlive-latex-extra \
+    texlive-lang-italian \
     && rm -rf /var/lib/apt/lists/*
 
 # Installiamo le dipendenze Python
