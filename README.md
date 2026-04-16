@@ -1,4 +1,4 @@
-# Tecniche di Machine Learning e Computer Vision per l'analisi ed il suggerimento di follow-up clinici
+# Progetto Sistemi Intelligenti Per Internet
 
 Questo progetto di ricerca propone una pipeline avanzata di Deep Learning per l'automazione del processo diagnostico su radiografie del torace, affrontando il problema della qualità del dato e della precisione della localizzazione tumorale.
 
