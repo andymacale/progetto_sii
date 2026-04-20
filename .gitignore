@@ -50,3 +50,24 @@ kaggle.json
 # Documentazione pesante
 *.pdf
 *.docx
+
+### LaTeX ###
+# File principali di ausilio alla compilazione
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# File relativi alla bibliografia (se usata)
+*.bbl
+*.blg
+
+# File generati da pacchetti specifici (es. hyperref, beamer)
+*.nav
+*.snm
+*.vrb
+
+# File di stato di latexmk (spesso usato per automatizzare la compilazione)
+*.fdb_latexmk
+*.fls
