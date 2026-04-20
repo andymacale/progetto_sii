@@ -8,6 +8,7 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{newtxtext,newtxmath}
+\usepackage{float}
 
 \geometry{a4paper, margin=2.5cm, top=2.5cm, bottom=2.5cm} 
 \usepackage{fancyhdr}
@@ -30,7 +31,7 @@
     \noindent Questo progetto tratta un sistema software con interfaccia Web, in particolare un Decision Support System, che
     permette ad un oncologo di caricare delle analisi cliniche di un paziente in cura, e lo aiuta a capire se il
     paziente è oncologico oppure no, e con che probababilità. Tale progetto, si basa sul linguaggio di programmazione
-    Python, poiché è il linguaggio più utilizzato nell'ambito del Machine Learning, che è ciò che si basa la maggior
+    Python, poiché è il linguaggio più utilizzato nell'ambito del Machine Learning, che è ciò su cui si basa la maggior
     parte progetto. Inoltre, implementa anche la XIA, che spiega il motivo della decisione presa dal sistema.
 
     \section*{Architettura software utilizzata}
@@ -49,7 +50,7 @@
         difatti gestisce le richieste da parte del frontend, interroga il database, elabora i dati tramite l'IA e invoca
         anche dei processi esterni per generare il referto in PDF, sfruttando un compilatore LaTeX, ottimo per la
         generazione di documenti PDF.\\
-        L'intera architettura è containerizzata tramite Docker,pratica molto comune in ambiente di sviluppo, poiché 
+        L'intera architettura è containerizzata tramite Docker, pratica molto comune in ambiente di sviluppo, poiché 
         assicura la massima portabilità, isolamento e scalabilità dell'ambiente di esecuzione.
     
     \subsection*{Entità e relazioni}
@@ -81,14 +82,64 @@
             \item Il medico seleziona la predizione delle analisi, il Sistema carica le analisi e avvia il modello di Machine Learning, che invia al Sistema il risultato della predizione.
             \item Il medico può scaricare il referto in formato PDF.
         \end{enumerate}
-        Di seguito, viene mostrato il seguente diagramma delle classi, dove GestoreDB permette la connessione con il DBMS.
-        \begin{center}
-            \includegraphics[width=\textwidth, height=20\textheight, keepaspectratio]{immagini/classi.pdf}
+        Di seguito, viene mostrato il seguente diagramma delle classi, dove GestoreDB permette la connessione con il DBMS.\\
+        \begin{figure}[H] % 'ht' suggerisce a LaTeX di restare "qui" o in cima
+            \centering
+            \includegraphics[scale=0.8]{immagini/classi.pdf} 
             \vspace{2mm} 
-            \captionof{figure}{Diagramma delle classi}
+            \caption{Diagramma delle classi}
             \label{fig:classi}
+        \end{figure}
+        \noindent Ora, verrà trattato nel dettaglio ogni punto del caso d'uso, illustrando anche il relativo diagramma di sequenza
+        di sistema.\\
+        Per prima cosa, il medico registrato deve effettuare il login. Il sistema usa come prima validazione per le
+        email e per le password le espressioni regolari, per evitare di interrogare il database nel caso sia le email
+        (\textit{stringa@stringa.stringa}) che per il numero di caratteri della password. Durante la prima registrazione,
+        il medico tramite QRCode configura la verifica a due fattori, usando l'app Google Authenticator, per garantire
+        maggiore sicurezza, dato che tratta comunque dati sensibili. Per gli altri accessi, invece, viene richiesto il
+        codice dall'applicazione. Una volta effettuato il login, verranno stampati tutti i pazienti in cura del medico.
+        \begin{center}
+            \includegraphics[width=0.8\textwidth]{immagini/login.pdf}
+            \vspace{2mm} 
+            \captionof{figure}{Diagramma di sequenza di sistema del login}
+            \label{fig:login}
         \end{center}
-        Adesso verrano raffigurati i diagrammi di sequenza di sistema, per ogni scenario di successo.
+        A questo punto, il medico può selezionare il paziente su cui deve elaborare il modello di Machine Learning
+        e vengono stampate le visite effettuate di quel paziente in ordine decrescente per data di visita. Il paziente
+        viene dunque selezionato in base al suo codice fiscale, poiché è univoco per ogni paziente. Una volta fatto ciò,
+        vengono stampati i valori delle ultime visite e la sua cartella clinica.
+        \begin{center}
+            \includegraphics[width=0.9\textwidth]{immagini/selezione.pdf}
+            \vspace{2mm} 
+            \captionof{figure}{Diagramma di sequenza di sistema della selezione del paziente}
+            \label{fig:selezione}
+        \end{center}
+        Quando il medico ha inserito tutto nel sistema, può avviare il modello di Machine Learning. Vengono passati tutte
+        le analisi ed alcuni valori clinici, con delle conversioni. Viene poi stampato il risultato dell'esito e la
+        probababilità di positività del paziente. In particolare:
+        \begin{itemize}
+            \item se la probababilità è minore od uguale del $40 \, \%$, allora il paziente viene classificato come negativo;
+            \item se la probabilità è compresa tra il $40 \, \%$ (escluso) ed il $70 \, \%$ (incluso), allora viene classificato come a rischio;
+            \item se la probababilità è maggiore del $70 \, \%$, allora il paziente viene classificato come positivo.
+        \end{itemize}
+        Tuttavia, tutto ciò verrà trattato nel dettaglio in un paragrafo dedicato.
+        \begin{center}
+            \includegraphics[width=0.9\textwidth]{immagini/selezione.pdf}
+            \vspace{2mm} 
+            \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del modello di Machine Learning}
+            \label{fig:analisi}
+        \end{center}
+        Infine, il medico può scaricare il referto in formato PDF.
+        \begin{center}
+            \includegraphics[width=0.4\textwidth]{immagini/download.pdf}
+            \vspace{2mm} 
+            \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del download del referto in PDF}
+            \label{fig:download}
+        \end{center}
+        \section*{Modello di Machine Learning}
+        Adesso, si entra nel cuore del progetto: il modello di Machine Learning.
+        
+        
         
 
 \end{document}
