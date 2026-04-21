@@ -9,6 +9,12 @@
 \usepackage{enumitem}
 \usepackage{newtxtext,newtxmath}
 \usepackage{float}
+\usepackage{svg}
+\usepackage{underscore}
+\svgsetup{
+    inkscapeexe=/usr/bin/inkscape,
+    inkscapelatex=false 
+}
 
 \geometry{a4paper, margin=2.5cm, top=2.5cm, bottom=2.5cm} 
 \usepackage{fancyhdr}
@@ -55,7 +61,7 @@
     
     \subsection*{Entità e relazioni}
         \begin{center}
-            \includegraphics[width=0.8\textwidth]{immagini/dominio.pdf}
+            \includesvg[width=0.8\textwidth, inkscapelatex=false]{immagini/dominio}
             \vspace{2mm} % Un piccolo spazio extra tra immagine e didascalia
             \captionof{figure}{Modello di dominio}
             \label{fig:dominio} % Label per citare la figura nel testo con \ref{fig:dominio}
@@ -83,13 +89,12 @@
             \item Il medico può scaricare il referto in formato PDF.
         \end{enumerate}
         Di seguito, viene mostrato il seguente diagramma delle classi, dove GestoreDB permette la connessione con il DBMS.\\
-        \begin{figure}[H] % 'ht' suggerisce a LaTeX di restare "qui" o in cima
-            \centering
-            \includegraphics[scale=0.8]{immagini/classi.pdf} 
-            \vspace{2mm} 
-            \caption{Diagramma delle classi}
+        \begin{center}
+            \includesvg[width=\textwidth]{immagini/classi}
+            \vspace{2mm}
+            \captionof{figure}{Diagramma delle classi}
             \label{fig:classi}
-        \end{figure}
+        \end{center}
         \noindent Ora, verrà trattato nel dettaglio ogni punto del caso d'uso, illustrando anche il relativo diagramma di sequenza
         di sistema.\\
         Per prima cosa, il medico registrato deve effettuare il login. Il sistema usa come prima validazione per le
@@ -99,7 +104,7 @@
         maggiore sicurezza, dato che tratta comunque dati sensibili. Per gli altri accessi, invece, viene richiesto il
         codice dall'applicazione. Una volta effettuato il login, verranno stampati tutti i pazienti in cura del medico.
         \begin{center}
-            \includegraphics[width=0.8\textwidth]{immagini/login.pdf}
+            \includesvg[width=0.8\textwidth]{immagini/login}
             \vspace{2mm} 
             \captionof{figure}{Diagramma di sequenza di sistema del login}
             \label{fig:login}
@@ -109,7 +114,7 @@
         viene dunque selezionato in base al suo codice fiscale, poiché è univoco per ogni paziente. Una volta fatto ciò,
         vengono stampati i valori delle ultime visite e la sua cartella clinica.
         \begin{center}
-            \includegraphics[width=0.9\textwidth]{immagini/selezione.pdf}
+            \includesvg[width=0.9\textwidth]{immagini/selezione}
             \vspace{2mm} 
             \captionof{figure}{Diagramma di sequenza di sistema della selezione del paziente}
             \label{fig:selezione}
@@ -124,14 +129,14 @@
         \end{itemize}
         Tuttavia, tutto ciò verrà trattato nel dettaglio in un paragrafo dedicato.
         \begin{center}
-            \includegraphics[width=0.9\textwidth]{immagini/selezione.pdf}
+            \includesvg[width=0.9\textwidth]{immagini/analisi}
             \vspace{2mm} 
             \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del modello di Machine Learning}
             \label{fig:analisi}
         \end{center}
         Infine, il medico può scaricare il referto in formato PDF.
         \begin{center}
-            \includegraphics[width=0.4\textwidth]{immagini/download.pdf}
+            \includesvg[width=0.4\textwidth]{immagini/download}
             \vspace{2mm} 
             \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del download del referto in PDF}
             \label{fig:download}

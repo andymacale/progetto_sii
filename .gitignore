@@ -68,3 +68,5 @@ kaggle.json
 # File di stato di latexmk (spesso usato per automatizzare la compilazione)
 *.fdb_latexmk
 *.fls
+
+relazione/svg-inkscape
