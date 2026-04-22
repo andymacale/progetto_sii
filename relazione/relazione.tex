@@ -1,6 +1,6 @@
+% !TEX program = xelatex
 \documentclass[10pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+\usepackage{fontspec} 
 \usepackage{geometry}
 \usepackage[italian]{babel}
 \usepackage{graphicx}
@@ -11,6 +11,7 @@
 \usepackage{float}
 \usepackage{svg}
 \usepackage{underscore}
+
 \svgsetup{
     inkscapeexe=/usr/bin/inkscape,
     inkscapelatex=false 
@@ -61,10 +62,10 @@
     
     \subsection*{Entità e relazioni}
         \begin{center}
-            \includesvg[width=0.8\textwidth, inkscapelatex=false]{immagini/dominio}
-            \vspace{2mm} % Un piccolo spazio extra tra immagine e didascalia
+            \includegraphics[scale=0.6,  keepaspectratio]{immagini/dominio.pdf}
+            \vspace{2mm}
             \captionof{figure}{Modello di dominio}
-            \label{fig:dominio} % Label per citare la figura nel testo con \ref{fig:dominio}
+            \label{fig:dominio}
         \end{center}
         Il sistema deve poter memorizzare ogni medico, con delle credenziali, a cui viene associata una email. Ogni
         medico contiene un nome, un cognome, una data di nascita, un codice fiscale ed il sesso. Le credenziali invece
@@ -89,12 +90,12 @@
             \item Il medico può scaricare il referto in formato PDF.
         \end{enumerate}
         Di seguito, viene mostrato il seguente diagramma delle classi, dove GestoreDB permette la connessione con il DBMS.\\
-        \begin{center}
-            \includesvg[width=\textwidth]{immagini/classi}
-            \vspace{2mm}
-            \captionof{figure}{Diagramma delle classi}
-            \label{fig:classi}
-        \end{center}
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.75, keepaspectratio]{immagini/classi.pdf}
+                \caption{Diagramma delle classi}
+                \label{fig:classi}
+            \end{figure}
         \noindent Ora, verrà trattato nel dettaglio ogni punto del caso d'uso, illustrando anche il relativo diagramma di sequenza
         di sistema.\\
         Per prima cosa, il medico registrato deve effettuare il login. Il sistema usa come prima validazione per le
@@ -103,47 +104,267 @@
         il medico tramite QRCode configura la verifica a due fattori, usando l'app Google Authenticator, per garantire
         maggiore sicurezza, dato che tratta comunque dati sensibili. Per gli altri accessi, invece, viene richiesto il
         codice dall'applicazione. Una volta effettuato il login, verranno stampati tutti i pazienti in cura del medico.
-        \begin{center}
-            \includesvg[width=0.8\textwidth]{immagini/login}
-            \vspace{2mm} 
-            \captionof{figure}{Diagramma di sequenza di sistema del login}
-            \label{fig:login}
-        \end{center}
-        A questo punto, il medico può selezionare il paziente su cui deve elaborare il modello di Machine Learning
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.5, keepaspectratio]{immagini/login.pdf}
+                \includegraphics[scale=0.3, keepaspectratio]{immagini/login.png}
+                \caption{Diagramma di sequenza di sistema e pagina Web del login}
+                \label{fig:login}
+        \end{figure}
+        \noindent A questo punto, il medico può selezionare il paziente su cui deve elaborare il modello di Machine Learning
         e vengono stampate le visite effettuate di quel paziente in ordine decrescente per data di visita. Il paziente
         viene dunque selezionato in base al suo codice fiscale, poiché è univoco per ogni paziente. Una volta fatto ciò,
         vengono stampati i valori delle ultime visite e la sua cartella clinica.
-        \begin{center}
-            \includesvg[width=0.9\textwidth]{immagini/selezione}
-            \vspace{2mm} 
-            \captionof{figure}{Diagramma di sequenza di sistema della selezione del paziente}
-            \label{fig:selezione}
-        \end{center}
-        Quando il medico ha inserito tutto nel sistema, può avviare il modello di Machine Learning. Vengono passati tutte
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.6, keepaspectratio]{immagini/selezione.pdf}
+                \caption{Diagramma di sequenza di sistema della selezione del paziente}
+                \label{fig:selezione}
+        \end{figure}
+        \noindent Quando il medico ha inserito tutto nel sistema, può avviare il modello di Machine Learning. Vengono passati tutte
         le analisi ed alcuni valori clinici, con delle conversioni. Viene poi stampato il risultato dell'esito e la
-        probababilità di positività del paziente. In particolare:
+        probababilità di positività del paziente.
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.6, keepaspectratio]{immagini/analisi.pdf}
+                \caption{Diagramma di sequenza di sistema dell'avvio del modello di Machine Learning}
+                \label{fig:analisi}
+        \end{figure}
+        \noindent In particolare:
         \begin{itemize}
             \item se la probababilità è minore od uguale del $40 \, \%$, allora il paziente viene classificato come negativo;
             \item se la probabilità è compresa tra il $40 \, \%$ (escluso) ed il $70 \, \%$ (incluso), allora viene classificato come a rischio;
             \item se la probababilità è maggiore del $70 \, \%$, allora il paziente viene classificato come positivo.
         \end{itemize}
         Tuttavia, tutto ciò verrà trattato nel dettaglio in un paragrafo dedicato.
-        \begin{center}
-            \includesvg[width=0.9\textwidth]{immagini/analisi}
-            \vspace{2mm} 
-            \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del modello di Machine Learning}
-            \label{fig:analisi}
-        \end{center}
-        Infine, il medico può scaricare il referto in formato PDF.
-        \begin{center}
-            \includesvg[width=0.4\textwidth]{immagini/download}
-            \vspace{2mm} 
-            \captionof{figure}{Diagramma di sequenza di sistema dell'avvio del download del referto in PDF}
-            \label{fig:download}
-        \end{center}
+        \begin{figure}[H]
+        \centering
+        \begin{tabular}{ccc} 
+            \includegraphics[scale=0.11] {immagini/negativo.png} & 
+            \includegraphics[scale=0.11] {immagini/rischio.png} &
+            \includegraphics[scale=0.11] {immagini/positivo.png} \\
+        \end{tabular}
+        \caption{Tipologie di risultati ottenuti}
+        \label{fig:confronto_ris}
+        \end{figure}
+        \noindent Infine, il medico può scaricare il referto in formato PDF.
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.5, keepaspectratio]{immagini/download.pdf}
+                \caption{Diagramma di sequenza di sistema del download di un referto}
+                \label{fig:download}
+        \end{figure}
+        \begin{figure}[H]
+                \centering
+                \includegraphics[scale=0.4, keepaspectratio]{immagini/download.png}
+                \caption{Esempio di un referto generato da un paziente placeholder}
+                \label{fig:referto}
+        \end{figure}
         \section*{Modello di Machine Learning}
-        Adesso, si entra nel cuore del progetto: il modello di Machine Learning.
-        
+        Adesso, si entra nel cuore del progetto: il modello di Machine Learning. Prima di parlare del modello vero e 
+        proprio, occorre capire bene come è strutturato il dataset a cui si fa riferimento, necessario per capire le
+        motivazioni della scelta del modello.
+        \subsection*{Dataset di riferimento}
+        Il dataset è MIMIC-IV da PhysioNet, che raccoglie una lista di pazienti di un ospedale statunitense, divedendo
+        i pazienti in reparto ospedaliero ed i pazienti in reparto in terapia intensiva. Le difficoltà iniziali sono:
+        \begin{itemize}
+            \item l'intero dataset è composto da diversi file .csv con tabelle anche di più 40 GB;
+            \item eseguire la join tra le varie tabelle è molto complesso, dato che alcune tabelle non contengono chiavi primarie.
+        \end{itemize}
+        Per questo motivo, sono state caricate le tabelle più rilevanti su PostgreSQL, per poi esportare il csv completo,
+        necessario per allenare il modello. Le tabelle utilizzate (in ordine alfabetico in inglese) sono:
+        \begin{itemize}
+            \item \textit{admissions}, che riporta le ammissioni dei pazienti in pronto soccorso;
+            \item \textit{diagnoses_icd}, che riporta i codici icd delle diagnosi;
+            \item \textit{labevents}, che riporta gli esami di laboratorio del paziente;
+            \item \textit{omr}, che riporta i dati clinici del paziente (es. peso, altezza, pressione sanguigna);
+            \item \textit{piatients}, che riporta i dati anagrafici del paziente;
+            \item \textit{procedures_icd}, che riporta le informazioni riguardanti ad esempio precedenti oncologici.
+        \end{itemize}
+        \subsection*{Analisi esplorativa dei dati}
+        La prima fase quando si esegue l'analisi esplorativa dei dati, più comunemente chiamata EDA (Explorative Data
+        Analysis), è la gestione dei valori nulli. Tuttavia, in questo caso i valori nulli sono fondamentali da tenere.
+        Per questo motivo, viene sostituito con $0$ e viene inserita una maschera booleana, per dire se il dato è mancante
+        (indicato con $0$), oppure no (indicato con $1$).\\
+        Successivamente, viene calcolata la correlazione delle feature, con la matrice di correlazione ed il VIF.  
+        \begin{table}[H]
+            \centering
+            \begin{minipage}[c]{0.65\textwidth}
+                \centering
+                \includegraphics[width=0.9\textwidth, keepaspectratio]{immagini/correlazione.png}
+                \captionof{figure}{Matrice di correlazione}
+                \label{fig:matrice}
+            \end{minipage}
+            \hfill
+            \begin{minipage}[c]{0.30\textwidth}
+                \centering
+                \small 
+                \begin{tabular}{|l|r|}
+                    \hline
+                    \textbf{Feature} & \textbf{VIF} \\
+                    \hline
+                    weight & $270{,}275407$ \\
+                    \hline
+                    bmi & $270{,}271329$ \\
+                    \hline
+                    avg\_spo2 & $12{,}547373$ \\
+                    \hline
+                    avg\_resp\_rate & $11{,}961291$ \\
+                    \hline
+                    hemoglobin & $3{,}454344$ \\
+                    \hline
+                    platelets & $2{,}891586$ \\
+                    \hline
+                    wbc & $2{,}243069$ \\
+                    \hline
+                    is\_smoker & $1{,}847033$ \\
+                    \hline
+                    glucose & $1{,}603366$ \\
+                    \hline
+                    creatinine & $1{,}298581$ \\
+                    \hline
+                    anchor\_age & $1{,}105792$ \\
+                    \hline
+                    is\_bpco & $1{,}069602$ \\
+                    \hline
+                    avg\_ldh & $1{,}069346$ \\
+                    \hline
+                    is\_cancer\_hist & $1{,}062703$ \\
+                    \hline
+                    gender & $1{,}047048$ \\
+                    \hline
+                    avg\_albumin & $1{,}017267$ \\
+                    \hline
+                \end{tabular}
+                \captionof{table}{Calcolo del VIF}
+            \label{tab:vif_values}
+            \end{minipage}
+            \label{tab:correlazione_vif}
+        \end{table}
+        \noindent Come si può notare, ci sono delle feature che hanno come VIF $270$ o $12$: con VIF maggiore od uguale 
+        a $10$ si ha multicolinearità grave, perciò sono state rimosse \textit{weight} e \textit{avg_resp_rate}: 
+        entrambe le feature si possono ricavare da altre, quindi generano solo rumore. Non a caso BMI (in italiano) si
+        calcola dal peso, perciò ci si aspetta che abbiano un VIF altro se sono presenti entrambi. Rimuovendo queste 
+        feature, non si ha una multicolinearità rilevante.
+        \begin{table}[H]
+            \centering
+                \small
+                \begin{tabular}{|l|r|}
+                    \hline
+                    \textbf{Feature} & \textbf{VIF} \\
+                    \hline
+                    hemoglobin & $3{,}449920$ \\
+                    \hline
+                    platelets & $2{,}891582$ \\
+                    \hline
+                    wbc & $2{,}235239$ \\
+                    \hline
+                    avg\_spo2 & $1{,}878255$ \\
+                    \hline
+                    is\_smoker & $1{,}846963$ \\
+                    \hline
+                    glucose & $1{,}603135$ \\
+                    \hline
+                    creatinine & $1{,}295873$ \\
+                    \hline
+                    anchor\_age & $1{,}099846$ \\
+                    \hline
+                    is\_bpco & $1{,}066946$ \\
+                    \hline
+                    avg\_ldh & $1{,}069346$ \\
+                    \hline
+                    is\_cancer\_hist & $1{,}062510$ \\
+                    \hline
+                    gender & $1{,}044424$ \\
+                    \hline
+                    avg\_albumin & $1{,}016640$ \\
+                    \hline
+                    bmi & $1{,}000222$ \\
+                    \hline
+                \end{tabular}
+                \captionof{table}{Calcolo del VIF dopo la rimozione delle feature con multicolinearità}
+        \end{table}
+        \noindent In seguito, avviene la gestione degli outliers: molto dannosi nella predizione, perché il modello non
+        sa come trattare i casi rari, generando dei falsi positivi o dei falsi negativi. Per fare ciò, si esegue un
+        box-plot, in base al target, che per semplicità viene rappresentato come sano o malato. Inoltre, si eliminano
+        gli eventuali errori di battitura (es. un peso di $500 \, \text{kg}$)
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.24, keepaspectratio]{immagini/box.png}
+            \caption{Box-plot per individuare gli outliers}
+            \label{fig:box}
+        \end{figure}
+        \noindent Come si può notare, sono presenti molti outliers: in ambito medico è del tutto normale, poiché molto spesso si
+        analizzano dei valori che sono fuori range: addirittura da lì che si identifica un malato non necessariamente
+        oncologico. Tuttavia, è necessario rimuoverli, altrimenti il modello non saprà gestirli: per fare ciò si esegue
+        una standardizzazione, in modo tale da avere una distribuzione con valor medio nullo e varianza unitaria. \\
+        Infine, si esegue la selezione delle feature, molto importante per capire quali sono effettivamente gli attributi
+        rilevanti nella predizione: le feature inutili, producono solamente rumore. Per fare ciò, si allena un classificatore
+        RandomForest, che valuta l'importanza di ogni feature con l'indice di Gini. I risultati usciti sono riportati nel
+        barplot che segue.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.32, keepaspectratio]{immagini/barplot.png}
+            \caption{Importanza di ogni feature calcolata con l'indice di Gini su un classificatore RandomForest}
+            \label{fig:barplot}
+        \end{figure}
+        \noindent Come si evince dal grafico, le feature \textit{is_smoker}, \textit{bmi} e \textit{gender} risultano: 
+        meno determinanti per il classificatore. Tuttavia le feature che sono state escluse sono solamente 
+        \textit{is_smoker} e \textit{gender}, poiché \textit{bmi} è comunque importante in ambito oncologico per la
+        valutazione dello stato generale del paziente.
+        \subsection*{Scelta del modello e fase di traning}
+        Per quanto riguarda la scelta del modello, è necessario comprendere nel dettaglio il problema di riferimento. In
+        questo contesto, si ha un problema di classificazione binaria, in cui si deve predire se un paziente è negativo
+        oppure positivo, a partire dalla sua storia clinica. In particolare, il dataset su cui è stato allenato il modello
+        si compone appuntu della storia clinica su dei pazienti di un ospedale statunitense: perciò sono registrate ogni 
+        misurazione ed ogni analisi registrate sul paziente. La variabile target viene individuata se almeno nella 
+        diagnosi risulta avere un tumore visibile dall'RX al torace: sicuramente ciò restringe il campo di ricerca e 
+        quindi il modello risulta sicuramente più capace di individuare poche tipologie di cancro. L'ospedale di riferimento,
+        però, possiede tantissimi reparti e non solo quelli di oncologia, perciò già solamente dividere i pazienti con qualsiasi
+        tipologia di tumore racchiuderebbe pochi casi. Facendo questa ulteriore divisione, si ottengono pochissimi pazienti
+        positivi. Ciò viene riportato della tabella che segue.
+        \begin{table}[H]
+            \centering
+                \small
+                \begin{tabular}{|l|c|r|}
+                    \hline
+                    \textbf{Tipologia di paziente} & \textbf{Numero} & \textbf{Percentuale} \\
+                    \hline
+                    Negativo & $4654$ & $97\,\%$ \\
+                    \hline
+                    Positivo & $140$ & $3\,\%$ \\
+                    \hline
+                \end{tabular}
+                \captionof{table}{Analisi del target}
+        \end{table}
+        \noindent Questo è un problema serio per le performance del modello e complica sicuramente la scelta del modello migliore.
+        Analizzando i dati, si nota che sono presenti delle feature che sono time-sensitive: perciò la scelta più coerente
+        e performante è una RNN (Recurrent Neural Network), che appertiene al Deep  Learning. In particolare è stata 
+        scelta una LSTM (Long Short-Term Memory), poiché è necessario elaborare delle vere e proprie sequenze temporali. 
+        Dalla LSTM, viene concetenata una rete neurale fully-connected MLP (Machine Learning), che invece esegue la 
+        classificazione vera e propria.\\
+        A questo sono state divise le feature in tre categorie principali:
+        \begin{itemize}
+            \item feature temporali, che solo le feature che sono time-sensitive, che comprendono i parametri 
+            fisiologici e di laboratorio monitorati nel tempo per catturare le dinamiche evolutive del paziente, che 
+             costituiscono l'input principale elaborato dalla componente LSTM della rete;
+            \item maschere, che fungono da indicatore di presenza, che indica se il valore delle feature è presente
+                  oppure è mancante, fondamentale per la natura irregolare e frammentata dei dati clinici;
+            \item feature cliniche, che indica il contesto storico statico del paziente, che fungono da baseline per il
+                classificatore.
+        \end{itemize}
+        Per via del problema dello sbilanciamento estremo del dataset, effettuare una suddivisione netta tra training set,
+        e validation set risulta quasi impossibile. Per questo motivo, è stato scelto di optare per la K-fold
+        cross-validation ($\text{K}=5$): tuttavia viene preso un $15 \, \%$ di test set, indispensabile per effettuare
+        l'analisi dei risultati. In particolare, la K-fold cross validation consiste nella suddivisione del dataset in 
+        $K$ sottoinsiemi, in cui il training set è composto da $K-1$ sottoinsiemi e la parte rimanente è il validation set.
+        Perciò avvengono $K$ addestramenti di $25$ epoche ciascuno con early stopping con pazienza pari a $3$, per evitare
+        che il sistema vada in overfitting, imparando a memeoria i dati senza comprendere il vero funzionamento.Per ogni
+        addestramento, vengono calcolate le metriche di train Loss e validation loss, le più importanti per comprendere se
+        il sistema sta andando in overfitting. La precision, la recall e l'accuracy, invece vengono calcolate in seguito alla
+        fine, poiché essendo il dataset così sbilanciato, perdono di significatività.
+       
+
         
         
 
