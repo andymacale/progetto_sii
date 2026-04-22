@@ -312,7 +312,7 @@
         meno determinanti per il classificatore. Tuttavia le feature che sono state escluse sono solamente 
         \textit{is_smoker} e \textit{gender}, poiché \textit{bmi} è comunque importante in ambito oncologico per la
         valutazione dello stato generale del paziente.
-        \subsection*{Scelta del modello e fase di traning}
+        \subsection*{Scelta del modello, fase di traning e risultati ottenuti}
         Per quanto riguarda la scelta del modello, è necessario comprendere nel dettaglio il problema di riferimento. In
         questo contesto, si ha un problema di classificazione binaria, in cui si deve predire se un paziente è negativo
         oppure positivo, a partire dalla sua storia clinica. In particolare, il dataset su cui è stato allenato il modello
@@ -359,10 +359,106 @@
         l'analisi dei risultati. In particolare, la K-fold cross validation consiste nella suddivisione del dataset in 
         $K$ sottoinsiemi, in cui il training set è composto da $K-1$ sottoinsiemi e la parte rimanente è il validation set.
         Perciò avvengono $K$ addestramenti di $25$ epoche ciascuno con early stopping con pazienza pari a $3$, per evitare
-        che il sistema vada in overfitting, imparando a memeoria i dati senza comprendere il vero funzionamento.Per ogni
+        che il sistema vada in overfitting, imparando a memeoria i dati senza comprendere il vero funzionamento. Per ogni
         addestramento, vengono calcolate le metriche di train Loss e validation loss, le più importanti per comprendere se
         il sistema sta andando in overfitting. La precision, la recall e l'accuracy, invece vengono calcolate in seguito alla
-        fine, poiché essendo il dataset così sbilanciato, perdono di significatività.
+        fine, poiché essendo il dataset così sbilanciato, perdono di significatività. A questo punto si esegue il cosidetto
+        OOF (Out-Of-Fold), che somma le performance reali del sistema. Di seguito, ne viene mostrato l'andamento del train
+        e validation loss.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.24, keepaspectratio]{immagini/andamento.png}
+            \caption{Andamento del train loss e del validation loss}
+            \label{fig:andamento}
+        \end{figure}
+        \noindent Come si può notare, il grafico mostra una curva di apprendimento estremamente regolare: la train Loss decresce
+        in modo costante, indicando che il modello sta imparando efficacemente i pattern presenti nei dati clinici. 
+        In parallelo, la validation loss segue lo stesso trend discendente senza mostrare divergenze brusche. Il modello
+        non sta soffrendo né di overfitting né di underfitting, poiché le curve siano vicine tra loro. Inoltre, le aeree
+        di varianza attorno alle medie dimostra che il classificatore non dipende da uno split di dati ben specifico, bensì
+        reagisce in modo uniforme a diverse porzioni del dataset. Infine, si nota che grazie all'early stopping, il training
+        è stato interrotto prima, poiché non ci sono stati miglioramenti per $3$ epoche consecutive.\\
+        Ora si rende necessario stabilire la soglia di decisione: di default è impostata a $0{,}5$, ma nella situazione
+        attuale di uno sbilanciamento tale, si rende necessario alzarla a $0{,}55$, altrimenti generebbe pochissimi falsi
+        negativi, il che è ottimo, ma ci sarebbero più falsi positivi che negativi. In altre parole, tantissimi pazienti
+        sani verrebbero classificati come oncologici.\\
+        Per prima cosa, si rappresenta la AUCROC (Area Under Curve Receiver Operating Characteristic), che mette in
+        relazione la sensibilità True Positive Rate e l'impatto dei falsi allarmi (False Positive Rate) al variare della
+        soglia. Il valore ottenuto indica la probababilità che il modello più alto ad un paziente effettivamente positivo
+        rispetto ad un paziente sano.  \\
+        Di seguito, viene mostrata una rappresentazione grafica ed il risultato ottenuto dal grafico stesso, con i relativi
+        commenti e valutazioni.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.4, keepaspectratio]{immagini/roc.png}
+            \caption{Grafico dell'AUCROC}
+            \label{fig:roc}
+        \end{figure}
+        \begin{equation}
+            \text{AUCROC} = 0{,}8562
+        \end{equation}
+        Infine, ne viene calcolata la matrice di confusione, che mostra ogni paziente come è stato classificato e
+        come doveva essere classificato: ovviamente l'obiettivo è massimizzare il numero di pazienti sulla diagonale
+        principale, perché rappresenta rispettivamente i veri negativi ed i veri positivi. Ne viene, inoltre, riportato
+        il calcolo dell'Accuracy e della Balanced Accuracy. 
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.45, keepaspectratio]{immagini/confusione.png}
+            \caption{Matrice di confusione}
+            \label{fig:confusione}
+        \end{figure}
+        \begin{equation}
+            \text{Accuracy} = \frac{\text{TP}+\text{TN}}{\text{TP}+\text{TN}+\text{FP}+\text{FN}}=\frac{109+2783}{109+2783+871+31} \approx 0{,}76
+        \end{equation}
+        \begin{equation}
+            \text{Recall} = \frac{\text{TP}}{\text{TP}+\text{FN}}=\frac{109}{109+31} \approx 0{,}78
+        \end{equation}
+        \begin{equation}
+            \text{Specificity} = \frac{\text{TN}}{\text{TN}+\text{FP}}=\frac{2783}{2783+871} \approx 0{,}76
+        \end{equation}
+        \begin{equation}
+            \text{Balanced Accuracy} = \frac{\text{Recall}+\text{Specificity}}{2}=\frac{0{,}78+0{,}76}{2} \approx 0{,}77
+        \end{equation}
+        Dalle metrica appena riportate, avere una Balanced Accuracy pari al $77\,\%$ dimostra che, nonostante il forte
+        sbilanciamento del dataset, il modello è molto più efficace di un classificatore casuale.
+        \subsection*{Interpretazione del modello e Explainable AI}
+        Infine, per evitare di avere un sistema a black-box, non molto apprezzato in ambito medico, poiché si vuole
+        comprendere le motivazioni della scelta della predizione del modello, viene implementata la cosiddetta 
+        Explainable AI, abbreviata in XIA: quella implementata è la SHAP (Shapely Additive Explanations), che permette
+        di quantificare il contributo di ogni singola feature alla predizione finale, basandosi sulla teoria dei giochi. Di
+        seguito, vengono riportati due grafici, che riportano rispettivamente l'analisi globale e la contribuzione locale.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.4, keepaspectratio]{immagini/shap.png}
+            \caption{Analisi globale dell'importanza delle feature}
+            \label{fig:shap_globale}
+        \end{figure}
+        \noindent Per prima cosa, si parte dell'analisi globale:
+        \begin{itemize}
+            \item \textit{is_cancer_hist}, che è intuitivamente la variabile più influente, infatti graficamente aumenta
+                    la probababilità di outcome (punti rossi a destra), mentre l'assenza (punti blu a sinistra) la riduce;
+            \item \textit{anchor_age}, infatti all'aumentare dell'età aumenta il rischio;
+            \item \textit{is_bpco}, difatti la presenza di BCPO è un forte indicatore positivo.
+        \end{itemize}
+        \noindent Infine, per quanto riguarda l'analisi locale, mostra come ogni paziente ha influenzato la decisione del modello.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.4, keepaspectratio]{immagini/shap_singolo.png}
+            \caption{Analisi locale di un singolo paziente}
+            \label{fig:shap_locale}
+        \end{figure}
+        In particolare si fa riferimento:
+        \begin{itemize}
+            \item il valore base ($E\left[f(X)\right]=0{,}315$) rappresenta la probababilità media predetta del modello del dataset;
+            \item il valore finale ($f(x)=0{,}183$) è la probabilità specifica calcolata per questo paziente.
+        \end{itemize}
+        I contributi che aumentano maggiormente il rischio sono \textit{is_bpco}, \textit{avg_ldh} e \textit{avg_spo2},
+        mentre i contributi che lo hanno diminuito sono \textit{anchor_age} e \textit{is_cancer_hist}.
+        
+
+
+
+        
        
 
         
