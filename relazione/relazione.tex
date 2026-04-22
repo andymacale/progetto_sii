@@ -37,7 +37,7 @@
 
     \noindent Questo progetto tratta un sistema software con interfaccia Web, in particolare un Decision Support System, che
     permette ad un oncologo di caricare delle analisi cliniche di un paziente in cura, e lo aiuta a capire se il
-    paziente è oncologico oppure no, e con che probababilità. Tale progetto, si basa sul linguaggio di programmazione
+    paziente è oncologico oppure no, e con che probabilità. Tale progetto, si basa sul linguaggio di programmazione
     Python, poiché è il linguaggio più utilizzato nell'ambito del Machine Learning, che è ciò su cui si basa la maggior
     parte progetto. Inoltre, implementa anche la XIA, che spiega il motivo della decisione presa dal sistema.
 
@@ -69,10 +69,10 @@
         \end{center}
         Il sistema deve poter memorizzare ogni medico, con delle credenziali, a cui viene associata una email. Ogni
         medico contiene un nome, un cognome, una data di nascita, un codice fiscale ed il sesso. Le credenziali invece
-        contengo, l'email, la password criptata, dei token per l'autentificazione a due fattori e per la sessione, per
+        contengo, l'email, la password criptata, dei token per l'autenticazione a due fattori e per la sessione, per
         evitare logout al reload della pagina e gestire la sessione per il sito. \\
         Il medico può selezionare ogni paziente che ha in cura, che inserisce il suo nome, cognome, codice fiscale, data
-        di nascita, sesso, altezza, se è un soggetto BCPO (BroncoPneumopatia Cronica Ostruttiva) e se in passato ha avuto
+        di nascita, sesso, altezza, se è un soggetto BPCO (BroncoPneumopatia Cronica Ostruttiva) e se in passato ha avuto
         dei precedenti oncologici. Il paziente è in cura presso un solo medico. \\
         Il medico esegue delle visite al paziente, in cui viene memorizzata la data ed un identificativo per essere memorizzata.
         A questo punto, ad ogni visita gli viene associata, una propria valutazione clinica, in cui vengono memorizzati questi
@@ -123,7 +123,7 @@
         \end{figure}
         \noindent Quando il medico ha inserito tutto nel sistema, può avviare il modello di Machine Learning. Vengono passati tutte
         le analisi ed alcuni valori clinici, con delle conversioni. Viene poi stampato il risultato dell'esito e la
-        probababilità di positività del paziente.
+        probabilità di positività del paziente.
         \begin{figure}[H]
                 \centering
                 \includegraphics[scale=0.6, keepaspectratio]{immagini/analisi.pdf}
@@ -132,9 +132,9 @@
         \end{figure}
         \noindent In particolare:
         \begin{itemize}
-            \item se la probababilità è minore od uguale del $40 \, \%$, allora il paziente viene classificato come negativo;
+            \item se la probabilità è minore od uguale del $40 \, \%$, allora il paziente viene classificato come negativo;
             \item se la probabilità è compresa tra il $40 \, \%$ (escluso) ed il $70 \, \%$ (incluso), allora viene classificato come a rischio;
-            \item se la probababilità è maggiore del $70 \, \%$, allora il paziente viene classificato come positivo.
+            \item se la probabilità è maggiore del $70 \, \%$, allora il paziente viene classificato come positivo.
         \end{itemize}
         Tuttavia, tutto ciò verrà trattato nel dettaglio in un paragrafo dedicato.
         \begin{figure}[H]
@@ -165,7 +165,7 @@
         proprio, occorre capire bene come è strutturato il dataset a cui si fa riferimento, necessario per capire le
         motivazioni della scelta del modello.
         \subsection*{Dataset di riferimento}
-        Il dataset è MIMIC-IV da PhysioNet, che raccoglie una lista di pazienti di un ospedale statunitense, divedendo
+        Il dataset è MIMIC-IV da PhysioNet, che raccoglie una lista di pazienti di un ospedale statunitense, dividendo
         i pazienti in reparto ospedaliero ed i pazienti in reparto in terapia intensiva. Le difficoltà iniziali sono:
         \begin{itemize}
             \item l'intero dataset è composto da diversi file .csv con tabelle anche di più 40 GB;
@@ -178,7 +178,7 @@
             \item \textit{diagnoses_icd}, che riporta i codici icd delle diagnosi;
             \item \textit{labevents}, che riporta gli esami di laboratorio del paziente;
             \item \textit{omr}, che riporta i dati clinici del paziente (es. peso, altezza, pressione sanguigna);
-            \item \textit{piatients}, che riporta i dati anagrafici del paziente;
+            \item \textit{patients}, che riporta i dati anagrafici del paziente;
             \item \textit{procedures_icd}, che riporta le informazioni riguardanti ad esempio precedenti oncologici.
         \end{itemize}
         \subsection*{Analisi esplorativa dei dati}
@@ -316,7 +316,7 @@
         Per quanto riguarda la scelta del modello, è necessario comprendere nel dettaglio il problema di riferimento. In
         questo contesto, si ha un problema di classificazione binaria, in cui si deve predire se un paziente è negativo
         oppure positivo, a partire dalla sua storia clinica. In particolare, il dataset su cui è stato allenato il modello
-        si compone appuntu della storia clinica su dei pazienti di un ospedale statunitense: perciò sono registrate ogni 
+        si compone appunto della storia clinica su dei pazienti di un ospedale statunitense: perciò sono registrate ogni 
         misurazione ed ogni analisi registrate sul paziente. La variabile target viene individuata se almeno nella 
         diagnosi risulta avere un tumore visibile dall'RX al torace: sicuramente ciò restringe il campo di ricerca e 
         quindi il modello risulta sicuramente più capace di individuare poche tipologie di cancro. L'ospedale di riferimento,
@@ -341,11 +341,11 @@
         Analizzando i dati, si nota che sono presenti delle feature che sono time-sensitive: perciò la scelta più coerente
         e performante è una RNN (Recurrent Neural Network), che appertiene al Deep  Learning. In particolare è stata 
         scelta una LSTM (Long Short-Term Memory), poiché è necessario elaborare delle vere e proprie sequenze temporali. 
-        Dalla LSTM, viene concetenata una rete neurale fully-connected MLP (Machine Learning), che invece esegue la 
+        Dalla LSTM, viene concatenata una rete neurale fully-connected MLP (Machine Learning), che invece esegue la 
         classificazione vera e propria.\\
-        A questo sono state divise le feature in tre categorie principali:
+        A questo scopo sono state divise le feature in tre categorie principali:
         \begin{itemize}
-            \item feature temporali, che solo le feature che sono time-sensitive, che comprendono i parametri 
+            \item feature temporali, ovvero quelle time-sensitive, che comprendono i parametri 
             fisiologici e di laboratorio monitorati nel tempo per catturare le dinamiche evolutive del paziente, che 
              costituiscono l'input principale elaborato dalla componente LSTM della rete;
             \item maschere, che fungono da indicatore di presenza, che indica se il valore delle feature è presente
@@ -359,7 +359,7 @@
         l'analisi dei risultati. In particolare, la K-fold cross validation consiste nella suddivisione del dataset in 
         $K$ sottoinsiemi, in cui il training set è composto da $K-1$ sottoinsiemi e la parte rimanente è il validation set.
         Perciò avvengono $K$ addestramenti di $25$ epoche ciascuno con early stopping con pazienza pari a $3$, per evitare
-        che il sistema vada in overfitting, imparando a memeoria i dati senza comprendere il vero funzionamento. Per ogni
+        che il sistema vada in overfitting, imparando a memoria i dati senza comprendere il vero funzionamento. Per ogni
         addestramento, vengono calcolate le metriche di train Loss e validation loss, le più importanti per comprendere se
         il sistema sta andando in overfitting. La precision, la recall e l'accuracy, invece vengono calcolate in seguito alla
         fine, poiché essendo il dataset così sbilanciato, perdono di significatività. A questo punto si esegue il cosidetto
@@ -374,7 +374,7 @@
         \noindent Come si può notare, il grafico mostra una curva di apprendimento estremamente regolare: la train Loss decresce
         in modo costante, indicando che il modello sta imparando efficacemente i pattern presenti nei dati clinici. 
         In parallelo, la validation loss segue lo stesso trend discendente senza mostrare divergenze brusche. Il modello
-        non sta soffrendo né di overfitting né di underfitting, poiché le curve siano vicine tra loro. Inoltre, le aeree
+        non sta soffrendo né di overfitting né di underfitting, poiché le curve siano vicine tra loro. Inoltre, le aree
         di varianza attorno alle medie dimostra che il classificatore non dipende da uno split di dati ben specifico, bensì
         reagisce in modo uniforme a diverse porzioni del dataset. Infine, si nota che grazie all'early stopping, il training
         è stato interrotto prima, poiché non ci sono stati miglioramenti per $3$ epoche consecutive.\\
@@ -384,7 +384,7 @@
         sani verrebbero classificati come oncologici.\\
         Per prima cosa, si rappresenta la AUCROC (Area Under Curve Receiver Operating Characteristic), che mette in
         relazione la sensibilità True Positive Rate e l'impatto dei falsi allarmi (False Positive Rate) al variare della
-        soglia. Il valore ottenuto indica la probababilità che il modello più alto ad un paziente effettivamente positivo
+        soglia. Il valore ottenuto indica la probabilità che il modello assegni un punteggio più alto ad un paziente effettivamente positivo
         rispetto ad un paziente sano.  \\
         Di seguito, viene mostrata una rappresentazione grafica ed il risultato ottenuto dal grafico stesso, con i relativi
         commenti e valutazioni.
@@ -424,7 +424,7 @@
         \subsection*{Interpretazione del modello e Explainable AI}
         Infine, per evitare di avere un sistema a black-box, non molto apprezzato in ambito medico, poiché si vuole
         comprendere le motivazioni della scelta della predizione del modello, viene implementata la cosiddetta 
-        Explainable AI, abbreviata in XIA: quella implementata è la SHAP (Shapely Additive Explanations), che permette
+        Explainable AI, abbreviata in XAI: quella implementata è la SHAP (Shapely Additive Explanations), che permette
         di quantificare il contributo di ogni singola feature alla predizione finale, basandosi sulla teoria dei giochi. Di
         seguito, vengono riportati due grafici, che riportano rispettivamente l'analisi globale e la contribuzione locale.
         \begin{figure}[H]
@@ -436,9 +436,9 @@
         \noindent Per prima cosa, si parte dell'analisi globale:
         \begin{itemize}
             \item \textit{is_cancer_hist}, che è intuitivamente la variabile più influente, infatti graficamente aumenta
-                    la probababilità di outcome (punti rossi a destra), mentre l'assenza (punti blu a sinistra) la riduce;
+                    la probabilità di outcome (punti rossi a destra), mentre l'assenza (punti blu a sinistra) la riduce;
             \item \textit{anchor_age}, infatti all'aumentare dell'età aumenta il rischio;
-            \item \textit{is_bpco}, difatti la presenza di BCPO è un forte indicatore positivo.
+            \item \textit{is_bpco}, difatti la presenza di BPCO è un forte indicatore positivo.
         \end{itemize}
         \noindent Infine, per quanto riguarda l'analisi locale, mostra come ogni paziente ha influenzato la decisione del modello.
         \begin{figure}[H]
@@ -449,7 +449,7 @@
         \end{figure}
         In particolare si fa riferimento:
         \begin{itemize}
-            \item il valore base ($E\left[f(X)\right]=0{,}315$) rappresenta la probababilità media predetta del modello del dataset;
+            \item il valore base ($E\left[f(X)\right]=0{,}315$) rappresenta la probabilità media predetta del modello del dataset;
             \item il valore finale ($f(x)=0{,}183$) è la probabilità specifica calcolata per questo paziente.
         \end{itemize}
         I contributi che aumentano maggiormente il rischio sono \textit{is_bpco}, \textit{avg_ldh} e \textit{avg_spo2},
