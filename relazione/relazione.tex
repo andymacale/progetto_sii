@@ -9,37 +9,46 @@
 \usepackage{enumitem}
 \usepackage{newtxtext,newtxmath}
 \usepackage{float}
-\usepackage{svg}
 \usepackage{underscore}
-
-\svgsetup{
-    inkscapeexe=/usr/bin/inkscape,
-    inkscapelatex=false 
-}
-
+\usepackage{csquotes}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage[super]{cite}
 \geometry{a4paper, margin=2.5cm, top=2.5cm, bottom=2.5cm} 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
-\fancyhf{} 
+\fancyhf{}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0.5pt}
-\fancyfoot[L]{\small Relazione Progetto Sistemi Intelligenti}
+\usepackage{fancyhdr}
+\fancyhead[C]{\small Relazione del progetto di Sistemi Intelligenti per Internet}    % Testo centrato
+
+
+\setlength{\headheight}{12.1pt}
+\fancyfoot[L]{Andrea Macale (560793)}
 \fancyfoot[R]{\small Pagina \thepage}
+
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \renewcommand{\headrulewidth}{0pt}
+}
 
 \begin{document}
 
+    \thispagestyle{plain}
     \begin{center}
-        {\huge \textbf{Relazione Progetto Sistemi Intelligenti per Internet}} \\ 
+        {\fontsize{18}{25}\selectfont \textbf{Relazione del progetto di Sistemi Intelligenti per Internet}} \\ 
         \vspace{4mm}
         \rule{\textwidth}{1.5pt} 
         \vspace{6mm}
     \end{center}
 
-    \noindent Questo progetto tratta un sistema software con interfaccia Web, in particolare un Decision Support System, che
+    \noindent Questo progetto\textsuperscript{\cite{progetto}} tratta un sistema software che implementa un Decision Support System ad interfaccia Web, che
     permette ad un oncologo di caricare delle analisi cliniche di un paziente in cura, e lo aiuta a capire se il
-    paziente è oncologico oppure no, e con che probabilità. Tale progetto, si basa sul linguaggio di programmazione
+    paziente è oncologico oppure no, e con quale probabilità di positività: in particolare tratta i tumori visibili da un RX al torace. Tale progetto, si basa sul linguaggio di programmazione
     Python, poiché è il linguaggio più utilizzato nell'ambito del Machine Learning, che è ciò su cui si basa la maggior
-    parte progetto. Inoltre, implementa anche la XIA, che spiega il motivo della decisione presa dal sistema.
+    parte progetto. Inoltre, implementa anche la XAI, che spiega il motivo della decisione presa dal sistema.
 
     \section*{Architettura software utilizzata}
         Tale applicazione è strutturata secondo il paradigma Object-Oriented e l'architettura Client-Server, garantendo 
@@ -49,8 +58,8 @@
         dei dati. \\
         La View è responsabile della presentazione e dell'interazione con l'utente: in particolare è sviluppata tramite il 
         framework Streamlit, che rende del tutto invisibile agli sviluppatori la complessità di HTML, CSS e JavaScript,
-        fornendo un'interfaccia reattiva ed soprattutto intuitiva. Ciò viene arricchito dalla visualizzazione di grafici 
-        per la eXplainable AI (XAI) e referti in PDF: in questo modo l'utente può capire i motivi che hanno portato alla
+        fornendo un'interfaccia reattiva e soprattutto intuitiva. Ciò viene arricchito dalla visualizzazione di grafici 
+        per la XAI e referti in PDF: in questo modo l'utente può capire i motivi che hanno portato alla
         decisione del modello: infatti, questo passa da essere un sistema di Intelligenza Artificiale puro ad un vero e
         proprio Sistema di Supporto alle Decisioni. \\
         Il Controller, che è stato sviluppato in Python 3.12, è il direttore di orchestra del sistema vero e proprio: 
@@ -69,23 +78,23 @@
         \end{center}
         Il sistema deve poter memorizzare ogni medico, con delle credenziali, a cui viene associata una email. Ogni
         medico contiene un nome, un cognome, una data di nascita, un codice fiscale ed il sesso. Le credenziali invece
-        contengo, l'email, la password criptata, dei token per l'autenticazione a due fattori e per la sessione, per
-        evitare logout al reload della pagina e gestire la sessione per il sito. \\
+        contengono, l'email, la password criptata, dei token per l'autenticazione a due fattori e per la sessione, per
+        evitare il logout al reload della pagina e gestire la sessione per il sito. \\
         Il medico può selezionare ogni paziente che ha in cura, che inserisce il suo nome, cognome, codice fiscale, data
         di nascita, sesso, altezza, se è un soggetto BPCO (BroncoPneumopatia Cronica Ostruttiva) e se in passato ha avuto
         dei precedenti oncologici. Il paziente è in cura presso un solo medico. \\
         Il medico esegue delle visite al paziente, in cui viene memorizzata la data ed un identificativo per essere memorizzata.
-        A questo punto, ad ogni visita gli viene associata, una propria valutazione clinica, in cui vengono memorizzati questi
+        A questo punto, ad ogni visita le viene associata, una propria valutazione clinica, in cui vengono memorizzati questi
         valori non obbligatori eccetto per il primo: peso, emoglobina, leucociti, piastrine, creatinina, glicemia, saturazione,
         LDH ed albumina.\\
-    \subsection*{Caso d'uso "processa analisi"}
+    \subsection*{Caso d'uso \enquote*{processa analisi}}
         Il sistema possiede diversi casi d'uso, come l'inserimento del nuovo paziente, di una nuova visita, la registrazione di un nuovo medico. Tuttavia,
-        quello soggetto di studio è quello della predizione.\\
+        quello soggetto di studio è quello della predizione delle analisi.\\
         \textit{Caso d'uso: Processa Analisi}
         \begin{enumerate}
             \item Un medico vuole eseguire la predizione delle analisi effettuate ad un paziente.
             \item Il medico esegue il login, con l'A2F ed il Sistema mostra i suoi dati e i pazienti in cura.
-            \item Il medico seleziona il paziente a cui vuole effettuare la predizione: il Sistema mostra la cartella clinica e l'elenco delle visite effettuate.
+            \item Il medico seleziona il paziente su cui vuole effettuare la predizione: il Sistema mostra la cartella clinica e l'elenco delle visite effettuate.
             \item Il medico seleziona la predizione delle analisi, il Sistema carica le analisi e avvia il modello di Machine Learning, che invia al Sistema il risultato della predizione.
             \item Il medico può scaricare il referto in formato PDF.
         \end{enumerate}
@@ -98,9 +107,9 @@
             \end{figure}
         \noindent Ora, verrà trattato nel dettaglio ogni punto del caso d'uso, illustrando anche il relativo diagramma di sequenza
         di sistema.\\
-        Per prima cosa, il medico registrato deve effettuare il login. Il sistema usa come prima validazione per le
-        email e per le password le espressioni regolari, per evitare di interrogare il database nel caso sia le email
-        (\textit{stringa@stringa.stringa}) che per il numero di caratteri della password. Durante la prima registrazione,
+        Per prima cosa, il medico registrato deve effettuare il login. Il sistema usa come prima validazione per l' email
+        e per la password le espressioni regolari, per evitare di interrogare il database nel caso sia le email
+        (\textit{stringa@stringa.stringa}) che per il numero di caratteri della password non sia rispettato. Durante la prima registrazione,
         il medico tramite QRCode configura la verifica a due fattori, usando l'app Google Authenticator, per garantire
         maggiore sicurezza, dato che tratta comunque dati sensibili. Per gli altri accessi, invece, viene richiesto il
         codice dall'applicazione. Una volta effettuato il login, verranno stampati tutti i pazienti in cura del medico.
@@ -136,7 +145,6 @@
             \item se la probabilità è compresa tra il $40 \, \%$ (escluso) ed il $70 \, \%$ (incluso), allora viene classificato come a rischio;
             \item se la probabilità è maggiore del $70 \, \%$, allora il paziente viene classificato come positivo.
         \end{itemize}
-        Tuttavia, tutto ciò verrà trattato nel dettaglio in un paragrafo dedicato.
         \begin{figure}[H]
         \centering
         \begin{tabular}{ccc} 
@@ -150,7 +158,7 @@
         \noindent Infine, il medico può scaricare il referto in formato PDF.
         \begin{figure}[H]
                 \centering
-                \includegraphics[scale=0.5, keepaspectratio]{immagini/download.pdf}
+                \includegraphics[scale=0.55, keepaspectratio]{immagini/download.pdf}
                 \caption{Diagramma di sequenza di sistema del download di un referto}
                 \label{fig:download}
         \end{figure}
@@ -161,18 +169,19 @@
                 \label{fig:referto}
         \end{figure}
         \section*{Modello di Machine Learning}
-        Adesso, si entra nel cuore del progetto: il modello di Machine Learning. Prima di parlare del modello vero e 
+        Prima di trattare del modello vero e 
         proprio, occorre capire bene come è strutturato il dataset a cui si fa riferimento, necessario per capire le
         motivazioni della scelta del modello.
         \subsection*{Dataset di riferimento}
-        Il dataset è MIMIC-IV da PhysioNet, che raccoglie una lista di pazienti di un ospedale statunitense, dividendo
-        i pazienti in reparto ospedaliero ed i pazienti in reparto in terapia intensiva. Le difficoltà iniziali sono:
+        Il dataset è MIMIC-IV da PhysioNet\textsuperscript{\cite{dataset}}, che raccoglie una lista di pazienti di un ospedale statunitense, dividendo
+        i pazienti in reparto ospedaliero ed i pazienti in terapia intensiva. Le difficoltà iniziali sono:
         \begin{itemize}
-            \item l'intero dataset è composto da diversi file .csv con tabelle anche di più 40 GB;
+            \item l'intero dataset è composto da diversi file .csv che occupano più 40 GB;
             \item eseguire la join tra le varie tabelle è molto complesso, dato che alcune tabelle non contengono chiavi primarie.
         \end{itemize}
         Per questo motivo, sono state caricate le tabelle più rilevanti su PostgreSQL, per poi esportare il csv completo,
-        necessario per allenare il modello. Le tabelle utilizzate (in ordine alfabetico in inglese) sono:
+        necessario per allenare il modello e importarlo sul Jupyter Notebook, sfruttando la libreria Pandas. Le tabelle
+        utilizzate (in ordine alfabetico in inglese) sono:
         \begin{itemize}
             \item \textit{admissions}, che riporta le ammissioni dei pazienti in pronto soccorso;
             \item \textit{diagnoses_icd}, che riporta i codici icd delle diagnosi;
@@ -183,9 +192,11 @@
         \end{itemize}
         \subsection*{Analisi esplorativa dei dati}
         La prima fase quando si esegue l'analisi esplorativa dei dati, più comunemente chiamata EDA (Explorative Data
-        Analysis), è la gestione dei valori nulli. Tuttavia, in questo caso i valori nulli sono fondamentali da tenere.
-        Per questo motivo, viene sostituito con $0$ e viene inserita una maschera booleana, per dire se il dato è mancante
-        (indicato con $0$), oppure no (indicato con $1$).\\
+        Analysis), è la gestione dei valori nulli. Tuttavia, in questo caso i valori mancanti sono fondamentali da tenere,
+        perché sono valori nulli, quindi analisi non effettuate appositamente, invece che valori che mancano effettivamente.
+        Per questo motivo, vviene sostituito con $0$ e viene inserita una maschera booleana: in questo modo lo $0$ 
+        funge da segnale numerico neutro, mentre la maschera permette alla rete di distinguere i dati reali da quelli 
+        mancanti.\\
         Successivamente, viene calcolata la correlazione delle feature, con la matrice di correlazione ed il VIF.  
         \begin{table}[H]
             \centering
@@ -243,9 +254,9 @@
         \end{table}
         \noindent Come si può notare, ci sono delle feature che hanno come VIF $270$ o $12$: con VIF maggiore od uguale 
         a $10$ si ha multicolinearità grave, perciò sono state rimosse \textit{weight} e \textit{avg_resp_rate}: 
-        entrambe le feature si possono ricavare da altre, quindi generano solo rumore. Non a caso BMI (in italiano) si
-        calcola dal peso, perciò ci si aspetta che abbiano un VIF altro se sono presenti entrambi. Rimuovendo queste 
-        feature, non si ha una multicolinearità rilevante.
+        entrambe le feature si possono ricavare da altre, quindi generano solo rumore. Non a caso BMI (in italiano IMC, Indice di Massa Corporea)
+         si calcola dal peso, perciò ci si aspetta che abbiano un VIF altro se sono presenti entrambi. Rimuovendo queste 
+        feature, non si ha una multicolinearità rilevante tra quelle rimaste.
         \begin{table}[H]
             \centering
                 \small
@@ -285,8 +296,8 @@
                 \captionof{table}{Calcolo del VIF dopo la rimozione delle feature con multicolinearità}
         \end{table}
         \noindent In seguito, avviene la gestione degli outliers: molto dannosi nella predizione, perché il modello non
-        sa come trattare i casi rari, generando dei falsi positivi o dei falsi negativi. Per fare ciò, si esegue un
-        box-plot, in base al target, che per semplicità viene rappresentato come sano o malato. Inoltre, si eliminano
+        sa come trattare i casi rari, generando molti falsi positivi e falsi negativi. Per fare ciò, si eseguono dei
+        box-plot di ogni feature, in base al target, che per semplicità viene rappresentato come sano o malato. Inoltre, si eliminano
         gli eventuali errori di battitura (es. un peso di $500 \, \text{kg}$)
         \begin{figure}[H]
             \centering
@@ -296,8 +307,8 @@
         \end{figure}
         \noindent Come si può notare, sono presenti molti outliers: in ambito medico è del tutto normale, poiché molto spesso si
         analizzano dei valori che sono fuori range: addirittura da lì che si identifica un malato non necessariamente
-        oncologico. Tuttavia, è necessario rimuoverli, altrimenti il modello non saprà gestirli: per fare ciò si esegue
-        una standardizzazione, in modo tale da avere una distribuzione con valor medio nullo e varianza unitaria. \\
+        oncologico. Tuttavia, è ecessario gestirli correttamente per non destabilizzare l'apprendimento: per fare ciò si esegue una standardizzazione 
+        (Z-score), utile a riscalare i valori e favorire la convergenza della rete neurale senza alterare la natura clinica del dato. \\
         Infine, si esegue la selezione delle feature, molto importante per capire quali sono effettivamente gli attributi
         rilevanti nella predizione: le feature inutili, producono solamente rumore. Per fare ciò, si allena un classificatore
         RandomForest, che valuta l'importanza di ogni feature con l'indice di Gini. I risultati usciti sono riportati nel
@@ -317,7 +328,7 @@
         questo contesto, si ha un problema di classificazione binaria, in cui si deve predire se un paziente è negativo
         oppure positivo, a partire dalla sua storia clinica. In particolare, il dataset su cui è stato allenato il modello
         si compone appunto della storia clinica su dei pazienti di un ospedale statunitense: perciò sono registrate ogni 
-        misurazione ed ogni analisi registrate sul paziente. La variabile target viene individuata se almeno nella 
+        misurazione ed ogni analisi sul paziente. La variabile target viene individuata se almeno nelle
         diagnosi risulta avere un tumore visibile dall'RX al torace: sicuramente ciò restringe il campo di ricerca e 
         quindi il modello risulta sicuramente più capace di individuare poche tipologie di cancro. L'ospedale di riferimento,
         però, possiede tantissimi reparti e non solo quelli di oncologia, perciò già solamente dividere i pazienti con qualsiasi
@@ -342,7 +353,9 @@
         e performante è una RNN (Recurrent Neural Network), che appertiene al Deep  Learning. In particolare è stata 
         scelta una LSTM (Long Short-Term Memory), poiché è necessario elaborare delle vere e proprie sequenze temporali. 
         Dalla LSTM, viene concatenata una rete neurale fully-connected MLP (Machine Learning), che invece esegue la 
-        classificazione vera e propria.\\
+        classificazione vera e propria. Tuttavia, Tale sbilanciamento è coerente con lo scoping del progetto focalizzato,
+        sui tumori visibili da RX toraciche e non rappresenta un limite, bensì una fotografia reale dell'incidenza di queste
+        specifiche diagnosi nel dataset.\\
         A questo scopo sono state divise le feature in tre categorie principali:
         \begin{itemize}
             \item feature temporali, ovvero quelle time-sensitive, che comprendono i parametri 
@@ -355,13 +368,13 @@
         \end{itemize}
         Per via del problema dello sbilanciamento estremo del dataset, effettuare una suddivisione netta tra training set,
         e validation set risulta quasi impossibile. Per questo motivo, è stato scelto di optare per la K-fold
-        cross-validation ($\text{K}=5$): tuttavia viene preso un $15 \, \%$ di test set, indispensabile per effettuare
-        l'analisi dei risultati. In particolare, la K-fold cross validation consiste nella suddivisione del dataset in 
-        $K$ sottoinsiemi, in cui il training set è composto da $K-1$ sottoinsiemi e la parte rimanente è il validation set.
-        Perciò avvengono $K$ addestramenti di $25$ epoche ciascuno con early stopping con pazienza pari a $3$, per evitare
+        cross-validation ($\text{K}=5$): tuttavia viene preso un $15 \, \%$ di test set fisso, indispensabile per effettuare
+        l'analisi dei risultati, su cui non viene effettuata la cross-validation. In particolare, la K-fold cross validation consiste nella suddivisione del dataset in 
+        $\text{K}$ sottoinsiemi, in cui il training set è composto da $\text{K}-1$ sottoinsiemi e la parte rimanente è il validation set.
+        Perciò avvengono $\text{K}$ addestramenti di $25$ epoche ciascuno con early stopping con pazienza pari a $3$, per evitare
         che il sistema vada in overfitting, imparando a memoria i dati senza comprendere il vero funzionamento. Per ogni
-        addestramento, vengono calcolate le metriche di train Loss e validation loss, le più importanti per comprendere se
-        il sistema sta andando in overfitting. La precision, la recall e l'accuracy, invece vengono calcolate in seguito alla
+        addestramento, vengono calcolate le metriche di train loss e validation loss, le più importanti per comprendere se
+        il sistema sta andando in overfitting. La precision, la recall e l'accuracy, invece, per il momento non vengono calcolate in seguito alla
         fine, poiché essendo il dataset così sbilanciato, perdono di significatività. A questo punto si esegue il cosidetto
         OOF (Out-Of-Fold), che somma le performance reali del sistema. Di seguito, ne viene mostrato l'andamento del train
         e validation loss.
@@ -380,8 +393,8 @@
         è stato interrotto prima, poiché non ci sono stati miglioramenti per $3$ epoche consecutive.\\
         Ora si rende necessario stabilire la soglia di decisione: di default è impostata a $0{,}5$, ma nella situazione
         attuale di uno sbilanciamento tale, si rende necessario alzarla a $0{,}55$, altrimenti generebbe pochissimi falsi
-        negativi, il che è ottimo, ma ci sarebbero più falsi positivi che negativi. In altre parole, tantissimi pazienti
-        sani verrebbero classificati come oncologici.\\
+        negativi, il che è clinicamente ottimo, ma a costo di un numero inaccettabile di falsi positivi. In altre parole, tantissimi pazienti
+        sani verrebbero classificati come oncologici, creando dei falsi allarmi.\\
         Per prima cosa, si rappresenta la AUCROC (Area Under Curve Receiver Operating Characteristic), che mette in
         relazione la sensibilità True Positive Rate e l'impatto dei falsi allarmi (False Positive Rate) al variare della
         soglia. Il valore ottenuto indica la probabilità che il modello assegni un punteggio più alto ad un paziente effettivamente positivo
@@ -390,20 +403,20 @@
         commenti e valutazioni.
         \begin{figure}[H]
             \centering
-            \includegraphics[scale=0.4, keepaspectratio]{immagini/roc.png}
+            \includegraphics[scale=0.3, keepaspectratio]{immagini/roc.png}
             \caption{Grafico dell'AUCROC}
             \label{fig:roc}
         \end{figure}
         \begin{equation}
             \text{AUCROC} = 0{,}8562
         \end{equation}
-        Infine, ne viene calcolata la matrice di confusione, che mostra ogni paziente come è stato classificato e
+        Infine, ne viene calcolata la matrice di confusione, che mostra come ogni paziente è stato classificato e
         come doveva essere classificato: ovviamente l'obiettivo è massimizzare il numero di pazienti sulla diagonale
         principale, perché rappresenta rispettivamente i veri negativi ed i veri positivi. Ne viene, inoltre, riportato
         il calcolo dell'Accuracy e della Balanced Accuracy. 
         \begin{figure}[H]
             \centering
-            \includegraphics[scale=0.45, keepaspectratio]{immagini/confusione.png}
+            \includegraphics[scale=0.4, keepaspectratio]{immagini/confusione.png}
             \caption{Matrice di confusione}
             \label{fig:confusione}
         \end{figure}
@@ -419,17 +432,18 @@
         \begin{equation}
             \text{Balanced Accuracy} = \frac{\text{Recall}+\text{Specificity}}{2}=\frac{0{,}78+0{,}76}{2} \approx 0{,}77
         \end{equation}
-        Dalle metrica appena riportate, avere una Balanced Accuracy pari al $77\,\%$ dimostra che, nonostante il forte
-        sbilanciamento del dataset, il modello è molto più efficace di un classificatore casuale.
+        Dalle metriche appena riportate, avere una Balanced Accuracy pari al $77\,\%$ dimostra che, nonostante il forte
+        sbilanciamento del dataset, il modello è molto più efficace di un classificatore casuale, sebbene abbia delle
+        limitazioni.
         \subsection*{Interpretazione del modello e Explainable AI}
-        Infine, per evitare di avere un sistema a black-box, non molto apprezzato in ambito medico, poiché si vuole
+        Infine, per superare il limite di un sistema a black-box, non molto apprezzato in ambito medico, poiché si vuole
         comprendere le motivazioni della scelta della predizione del modello, viene implementata la cosiddetta 
-        Explainable AI, abbreviata in XAI: quella implementata è la SHAP (Shapely Additive Explanations), che permette
+        Explainable AI, abbreviata in XAI: quella implementata è la SHAP (Shapley Additive Explanations), che permette
         di quantificare il contributo di ogni singola feature alla predizione finale, basandosi sulla teoria dei giochi. Di
         seguito, vengono riportati due grafici, che riportano rispettivamente l'analisi globale e la contribuzione locale.
         \begin{figure}[H]
             \centering
-            \includegraphics[scale=0.4, keepaspectratio]{immagini/shap.png}
+            \includegraphics[scale=0.3, keepaspectratio]{immagini/shap.png}
             \caption{Analisi globale dell'importanza delle feature}
             \label{fig:shap_globale}
         \end{figure}
@@ -443,25 +457,28 @@
         \noindent Infine, per quanto riguarda l'analisi locale, mostra come ogni paziente ha influenzato la decisione del modello.
         \begin{figure}[H]
             \centering
-            \includegraphics[scale=0.4, keepaspectratio]{immagini/shap_singolo.png}
+            \includegraphics[scale=0.3, keepaspectratio]{immagini/shap_singolo.png}
             \caption{Analisi locale di un singolo paziente}
             \label{fig:shap_locale}
         \end{figure}
         In particolare si fa riferimento:
         \begin{itemize}
-            \item il valore base ($E\left[f(X)\right]=0{,}315$) rappresenta la probabilità media predetta del modello del dataset;
-            \item il valore finale ($f(x)=0{,}183$) è la probabilità specifica calcolata per questo paziente.
+            \item il valore base $E\left[f(X)\right]=0{,}315$ rappresenta la probabilità media predetta del modello del dataset;
+            \item il valore finale $f(x)=0{,}183$ è la probabilità specifica calcolata per questo paziente.
         \end{itemize}
-        I contributi che aumentano maggiormente il rischio sono \textit{is_bpco}, \textit{avg_ldh} e \textit{avg_spo2},
+        I fattori che aumentano maggiormente il rischio sono \textit{is_bpco}, \textit{avg_ldh} e \textit{avg_spo2},
         mentre i contributi che lo hanno diminuito sono \textit{anchor_age} e \textit{is_cancer_hist}.
-        
 
+        \begin{thebibliography}{9}
 
+        \bibitem{progetto} 
+        GitHub del progetto:
+        \url{https://github.com/andymacale/progetto_sii}
 
-        
-       
+        \bibitem{dataset} 
+        Dataset di riferimento:
+        \url{https://physionet.org/content/mimiciv/3.1/}
 
-        
-        
-
+        \end{thebibliography}
 \end{document}
+ 
